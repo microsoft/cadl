@@ -42,7 +42,7 @@
   ],
   "scripts": {
     "clean": "rimraf ./dist ./temp",
-    "build": "npm run compile",
+    "build": "npm run compile && api-extractor run --local --diagnostics",
     "compile": "tsc -p .",
     "watch": "tsc -p . --watch",
     "dogfood": "node scripts/dogfood.js",
@@ -88,6 +88,7 @@
     "prettier-plugin-organize-imports": "~2.3.4",
     "source-map-support": "~0.5.19",
     "rimraf": "~3.0.2",
-    "typescript": "~4.6.3"
+    "typescript": "~4.6.3",
+    "@microsoft/api-extractor": "~7.21.3"
   }
 }
