@@ -3,10 +3,10 @@ import { reportDiagnostic } from "./lib.js";
 
 export function $onValidate(program: Program) {
   const root = program.checker!.getGlobalNamespaceType();
-  validateNoExportAtRoot(program, root);
+  validateAllExportInNamespace(program, root);
 }
 
-function validateNoExportAtRoot(program: Program, root: NamespaceType) {
+function validateAllExportInNamespace(program: Program, root: NamespaceType) {
   function validateFor(items: Map<string, Type & { name?: string }>) {
     for (const type of items.values()) {
       reportDiagnostic(program, {
