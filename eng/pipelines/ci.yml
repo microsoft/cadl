@@ -5,29 +5,34 @@ trigger:
 pr: none
 
 jobs:
-  - job: npm
+  - job: npm_stable
     displayName: Npm publish
     pool:
-      vmImage: windows-2019
+      vmImage: windows-latest
     steps:
       - task: NodeTool@0
         inputs:
-          versionSpec: 14.x
+          versionSpec: 16.x
         displayName: Install Node.js
+
+      - task: UseDotNet@2
+        inputs:
+          version: 6.0.x
 
       - script: echo '##vso[task.setvariable variable=CADL_VS_CI_BUILD;]true'
         displayName: Enable official Visual Studio extension build
 
-      - script: node common/scripts/install-run-rush.js install
+      - script: npx @microsoft/rush install
         displayName: Install JavaScript Dependencies
 
-      - script: node packages/cadl-vs/scripts/build.js --restore
+      - script: dotnet restore
         displayName: Restore .NET Dependencies
+        workingDirectory: packages/cadl-vs
 
-      - script: node common/scripts/install-run-rush.js rebuild --verbose
+      - script: npx @microsoft/rush rebuild --verbose
         displayName: Build
 
-      - script: node common/scripts/install-run-rush.js test-official
+      - script: npx @microsoft/rush test-official
         displayName: Test
 
       - template: ./upload-coverage.yml
@@ -45,6 +50,38 @@ jobs:
           storage: "cadlplayground"
           containerName: "$web"
         displayName: "Update playground"
+
+  - job: npm_dev
+    dependsOn: npm_stable
+    displayName: Npm publish dev version
+    pool:
+      vmImage: windows-latest
+    steps:
+      - task: NodeTool@0
+        inputs:
+          versionSpec: 16.x
+        displayName: Install Node.js
+
+      - script: echo '##vso[task.setvariable variable=CADL_VS_CI_BUILD;]true'
+        displayName: Enable official Visual Studio extension build
+
+      - script: npx @microsoft/rush install
+        displayName: Install JavaScript Dependencies
+
+      - script: dotnet restore
+        displayName: Restore .NET Dependencies
+        workingDirectory: packages/cadl-vs
+
+      - script: npx @microsoft/rush rebuild --verbose
+        displayName: Build
+
+      - script: node ./packages/internal-build-utils/cmd/cli.js bump-version-preview .
+        displayName: Bump version to prerelease targets
+
+      - script: |
+          set NPM_AUTH_TOKEN=$(azure-sdk-npm-token)
+          node common/scripts/install-run-rush.js publish --publish --include-all --set-access-level public --tag next
+        displayName: Release
 
   - job: docker
     displayName: Docker build and publish

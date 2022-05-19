@@ -1,10 +1,10 @@
 #!/usr/bin/env node
-
+// @ts-check
+import { run } from "@cadl-lang/internal-build-utils";
 import { readdirSync, rmdirSync } from "fs";
 import mkdirp from "mkdirp";
 import { dirname, join, normalize, resolve } from "path";
 import { fileURLToPath } from "url";
-import { run } from "../../../eng/scripts/helpers.js";
 
 const excludedSamples = [
   // fails compilation by design to demo language server
@@ -20,9 +20,13 @@ const excludedSamples = [
 
 const rootInputPath = resolvePath("../");
 const rootOutputPath = resolvePath("../test/output");
-main();
 
-function main() {
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});
+
+async function main() {
   // clear any previous output as otherwise failing to emit anything could
   // escape PR validation. Also ensures we delete output for samples that
   // no longer exist.
@@ -33,12 +37,13 @@ function main() {
     const outputPath = join(rootOutputPath, folderName);
     mkdirp(outputPath);
 
-    run(process.execPath, [
+    await run(process.execPath, [
       "../../packages/compiler/dist/core/cli.js",
       "compile",
       inputPath,
       `--output-path=${outputPath}`,
       `--emit=@cadl-lang/openapi3`,
+      `--warn-as-error`,
       `--debug`,
     ]);
   }

@@ -97,7 +97,7 @@ function cloneKeyProperties(context: DecoratorContext, target: ModelType, resour
     const { keyProperty } = resourceKey;
     const keyName = getKeyName(program, keyProperty);
 
-    const newProp = program.checker!.cloneType(keyProperty);
+    const newProp = program.checker.cloneType(keyProperty);
     newProp.name = keyName;
     newProp.decorators.push(
       {
@@ -163,6 +163,15 @@ export function getParentResource(
   return program.stateMap(parentResourceTypesKey).get(resourceType);
 }
 
+/**
+ * `@parentResource` marks a model property with a reference to its parent resource type
+ *
+ * The first argument should be a reference to a model type which will be treated as the parent
+ * type of the target model type.  This will cause the `@key` properties of all parent types of
+ * the target type to show up in operations of the `Resource*<T>` interfaces defined in this library.
+ *
+ * `@parentResource` can only be applied to models.
+ */
 export function $parentResource({ program }: DecoratorContext, entity: Type, parentType: Type) {
   if (!validateDecoratorTarget(program, parentType, "@parentResource", "Model")) {
     return;

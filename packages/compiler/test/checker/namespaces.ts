@@ -614,8 +614,8 @@ describe("compiler: namespace type name", () => {
     );
 
     const { Model1, Model2 } = await testHost.compile("./a.cadl");
-    strictEqual(testHost.program.checker?.getTypeName(Model1), "Foo.Model1");
-    strictEqual(testHost.program.checker?.getTypeName(Model2), "Foo.Other.Bar.Model2");
+    strictEqual(testHost.program.checker.getTypeName(Model1), "Foo.Model1");
+    strictEqual(testHost.program.checker.getTypeName(Model2), "Foo.Other.Bar.Model2");
   });
 
   it("gets full name in edge case with decorators", async () => {
@@ -643,7 +643,7 @@ describe("compiler: namespace type name", () => {
     );
 
     const { SomeModel, AnotherModel } = await testHost.compile("./main.cadl");
-    const checker = testHost.program.checker!;
+    const checker = testHost.program.checker;
     strictEqual(checker.getTypeName(SomeModel), "SomeNamespace.SomeModel");
     strictEqual(checker.getTypeName(AnotherModel), "AnotherNamespace.AnotherModel");
   });

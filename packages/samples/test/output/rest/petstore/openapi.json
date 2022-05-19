@@ -92,7 +92,7 @@
                   }
                 },
                 "description": "The template for adding optional properties.",
-                "x-cadl-name": "Cadl.OptionalProperties<Cadl.UpdateableProperties_PetStore.Pet>"
+                "x-cadl-name": "OptionalProperties<UpdateableProperties<Pet>>"
               }
             }
           }
@@ -180,7 +180,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Cadl.Rest.Resource.Page_Pet"
+                  "$ref": "#/components/schemas/Rest.Resource.Page_Pet"
                 }
               }
             }
@@ -268,7 +268,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Cadl.Rest.Resource.Page_Checkup"
+                  "$ref": "#/components/schemas/Rest.Resource.Page_Checkup"
                 }
               }
             }
@@ -367,7 +367,7 @@
                   }
                 },
                 "description": "The template for adding optional properties.",
-                "x-cadl-name": "Cadl.OptionalProperties<Cadl.UpdateableProperties_PetStore.Insurance>"
+                "x-cadl-name": "OptionalProperties<UpdateableProperties<Insurance>>"
               }
             }
           }
@@ -432,7 +432,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Cadl.Rest.Resource.Page_Toy"
+                  "$ref": "#/components/schemas/Rest.Resource.Page_Toy"
                 }
               }
             }
@@ -537,7 +537,7 @@
                   }
                 },
                 "description": "The template for adding optional properties.",
-                "x-cadl-name": "Cadl.OptionalProperties<Cadl.UpdateableProperties_PetStore.Insurance>"
+                "x-cadl-name": "OptionalProperties<UpdateableProperties<Insurance>>"
               }
             }
           }
@@ -607,7 +607,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Cadl.Rest.Resource.Page_Checkup"
+                  "$ref": "#/components/schemas/Rest.Resource.Page_Checkup"
                 }
               }
             }
@@ -702,7 +702,7 @@
                   }
                 },
                 "description": "The template for adding optional properties.",
-                "x-cadl-name": "Cadl.OptionalProperties<Cadl.UpdateableProperties_PetStore.Owner>"
+                "x-cadl-name": "OptionalProperties<UpdateableProperties<Owner>>"
               }
             }
           }
@@ -790,7 +790,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Cadl.Rest.Resource.Page_Owner"
+                  "$ref": "#/components/schemas/Rest.Resource.Page_Owner"
                 }
               }
             }
@@ -878,7 +878,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Cadl.Rest.Resource.Page_Checkup"
+                  "$ref": "#/components/schemas/Rest.Resource.Page_Checkup"
                 }
               }
             }
@@ -977,7 +977,7 @@
                   }
                 },
                 "description": "The template for adding optional properties.",
-                "x-cadl-name": "Cadl.OptionalProperties<Cadl.UpdateableProperties_PetStore.Insurance>"
+                "x-cadl-name": "OptionalProperties<UpdateableProperties<Insurance>>"
               }
             }
           }
@@ -1072,7 +1072,7 @@
           "message"
         ]
       },
-      "Cadl.Rest.Resource.Page_Pet": {
+      "Rest.Resource.Page_Pet": {
         "type": "object",
         "properties": {
           "value": {
@@ -1080,7 +1080,7 @@
             "items": {
               "$ref": "#/components/schemas/Pet"
             },
-            "x-cadl-name": "PetStore.Pet[]",
+            "x-cadl-name": "Pet[]",
             "description": "The items on this page"
           },
           "nextLink": {
@@ -1113,7 +1113,7 @@
           "notes"
         ]
       },
-      "Cadl.Rest.Resource.Page_Checkup": {
+      "Rest.Resource.Page_Checkup": {
         "type": "object",
         "properties": {
           "value": {
@@ -1121,7 +1121,7 @@
             "items": {
               "$ref": "#/components/schemas/Checkup"
             },
-            "x-cadl-name": "PetStore.Checkup[]",
+            "x-cadl-name": "Checkup[]",
             "description": "The items on this page"
           },
           "nextLink": {
@@ -1176,7 +1176,7 @@
           "name"
         ]
       },
-      "Cadl.Rest.Resource.Page_Toy": {
+      "Rest.Resource.Page_Toy": {
         "type": "object",
         "properties": {
           "value": {
@@ -1184,7 +1184,7 @@
             "items": {
               "$ref": "#/components/schemas/Toy"
             },
-            "x-cadl-name": "PetStore.Toy[]",
+            "x-cadl-name": "Toy[]",
             "description": "The items on this page"
           },
           "nextLink": {
@@ -1218,7 +1218,7 @@
           "age"
         ]
       },
-      "Cadl.Rest.Resource.Page_Owner": {
+      "Rest.Resource.Page_Owner": {
         "type": "object",
         "properties": {
           "value": {
@@ -1226,7 +1226,7 @@
             "items": {
               "$ref": "#/components/schemas/Owner"
             },
-            "x-cadl-name": "PetStore.Owner[]",
+            "x-cadl-name": "Owner[]",
             "description": "The items on this page"
           },
           "nextLink": {

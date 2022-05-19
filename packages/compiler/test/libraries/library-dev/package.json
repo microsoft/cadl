@@ -1,0 +1,5 @@
+{
+  "name": "my-cadl-library",
+  "type": "module",
+  "cadlMain": "./src/main.cadl"
+}

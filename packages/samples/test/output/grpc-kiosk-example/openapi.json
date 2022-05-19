@@ -12,6 +12,9 @@
   "paths": {
     "/v1/kiosks": {
       "post": {
+        "tags": [
+          "Display"
+        ],
         "operationId": "Display_createKiosk",
         "description": "Create a kiosk. This enrolls the kiosk for sign display.",
         "parameters": [],
@@ -37,9 +40,6 @@
             }
           }
         },
-        "tags": [
-          "Display"
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -51,6 +51,9 @@
         }
       },
       "get": {
+        "tags": [
+          "Display"
+        ],
         "operationId": "Display_listKiosks",
         "description": "List active kiosks.",
         "parameters": [],
@@ -75,14 +78,14 @@
               }
             }
           }
-        },
-        "tags": [
-          "Display"
-        ]
+        }
       }
     },
     "/v1/kiosks/{id}": {
       "get": {
+        "tags": [
+          "Display"
+        ],
         "operationId": "Display_getKiosk",
         "description": "Get a kiosk.",
         "parameters": [
@@ -117,12 +120,12 @@
               }
             }
           }
-        },
-        "tags": [
-          "Display"
-        ]
+        }
       },
       "delete": {
+        "tags": [
+          "Display"
+        ],
         "operationId": "Display_deleteKiosk",
         "description": "Delete a kiosk.",
         "parameters": [
@@ -150,14 +153,14 @@
               }
             }
           }
-        },
-        "tags": [
-          "Display"
-        ]
+        }
       }
     },
     "/v1/signs": {
       "post": {
+        "tags": [
+          "Display"
+        ],
         "operationId": "Display_createSign",
         "description": "Create a sign. This enrolls the sign for sign display.",
         "parameters": [],
@@ -183,9 +186,6 @@
             }
           }
         },
-        "tags": [
-          "Display"
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -197,6 +197,9 @@
         }
       },
       "get": {
+        "tags": [
+          "Display"
+        ],
         "operationId": "Display_listSigns",
         "description": "List active signs.",
         "parameters": [],
@@ -211,14 +214,14 @@
               }
             }
           }
-        },
-        "tags": [
-          "Display"
-        ]
+        }
       }
     },
     "/v1/signs/{id}": {
       "get": {
+        "tags": [
+          "Display"
+        ],
         "operationId": "Display_getSign",
         "description": "Get a sign.",
         "parameters": [
@@ -253,12 +256,12 @@
               }
             }
           }
-        },
-        "tags": [
-          "Display"
-        ]
+        }
       },
       "delete": {
+        "tags": [
+          "Display"
+        ],
         "operationId": "Display_deleteSign",
         "description": "Delete a sign.",
         "parameters": [
@@ -286,14 +289,14 @@
               }
             }
           }
-        },
-        "tags": [
-          "Display"
-        ]
+        }
       }
     },
     "/v1/signs/{sign_id}": {
       "post": {
+        "tags": [
+          "Display"
+        ],
         "operationId": "Display_setSignIdForKioskIds",
         "description": "Set a sign for display on one or more kiosks.",
         "parameters": [
@@ -316,9 +319,6 @@
             }
           }
         },
-        "tags": [
-          "Display"
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -328,7 +328,7 @@
                   "type": "integer",
                   "format": "int32"
                 },
-                "x-cadl-name": "Cadl.int32[]"
+                "x-cadl-name": "int32[]"
               }
             }
           }
@@ -337,6 +337,9 @@
     },
     "/v1/kiosks/{kiosk_id}/sign": {
       "get": {
+        "tags": [
+          "Display"
+        ],
         "operationId": "Display_getSignIdForKioskId",
         "description": "Get the sign that should be displayed on a kiosk.",
         "parameters": [
@@ -371,10 +374,7 @@
               }
             }
           }
-        },
-        "tags": [
-          "Display"
-        ]
+        }
       }
     }
   },

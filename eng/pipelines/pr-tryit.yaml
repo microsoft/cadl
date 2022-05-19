@@ -1,0 +1,37 @@
+trigger: none
+pr:
+  - main
+
+jobs:
+  - job: publish_playground
+    displayName: Publish playground
+    pool:
+      vmImage: windows-latest
+
+    steps:
+      - checkout: self
+        persistCredentials: true
+
+      - task: NodeTool@0
+        inputs:
+          versionSpec: 16.x
+        displayName: Install Node.js
+
+      - script: npx @microsoft/rush install
+        displayName: Install JavaScript Dependencies
+
+      - script: npx @microsoft/rush rebuild --verbose
+        displayName: Build
+
+      - task: AzureFileCopy@4
+        inputs:
+          sourcePath: "packages/playground/dist/*"
+          azureSubscription: "Azure SDK Playground"
+          destination: "AzureBlob"
+          storage: "cadlplayground"
+          blobPrefix: prs/$(System.PullRequest.PullRequestNumber)/
+          containerName: "$web"
+        displayName: "Update playground"
+
+      - script: node eng/scripts/create-tryit-comment.js
+        displayName: Check already commented

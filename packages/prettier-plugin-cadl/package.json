@@ -1,21 +1,22 @@
 {
   "name": "@cadl-lang/prettier-plugin-cadl",
-  "version": "0.5.10",
+  "version": "0.5.11",
   "description": "",
   "main": "dist/index.js",
   "scripts": {
     "build": "rollup --config 2>&1 && npm run generate-third-party-notices",
     "test": "mocha --timeout 5000 'test/**/*.js'",
     "test-official": "mocha --timeout 5000 --forbid-only 'test/**/*.js'",
-    "generate-third-party-notices": "node ../../eng/scripts/generate-third-party-notices"
+    "generate-third-party-notices": "cadl-build-tool generate-third-party-notices"
   },
   "author": "Microsoft Corporation",
   "license": "MIT",
   "dependencies": {
-    "prettier": "~2.5.1"
+    "prettier": "~2.6.2"
   },
   "devDependencies": {
-    "@cadl-lang/compiler": "~0.30.0",
+    "@cadl-lang/compiler": "~0.31.0",
+    "@cadl-lang/internal-build-utils": "~0.2.0",
     "@rollup/plugin-commonjs": "~22.0.0-13",
     "@rollup/plugin-json": "~4.1.0",
     "@rollup/plugin-node-resolve": "~13.1.3",

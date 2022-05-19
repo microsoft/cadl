@@ -1,0 +1,115 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Pet Store Service",
+    "version": "2021-03-25"
+  },
+  "tags": [],
+  "paths": {
+    "/": {
+      "get": {
+        "operationId": "MyService_getPet",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ApiVersionParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Pet"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "ApiVersionParam": {
+        "name": "apiVersion",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "schemas": {
+      "Pet": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/Cat"
+          },
+          {
+            "$ref": "#/components/schemas/Dog"
+          }
+        ]
+      },
+      "Cat": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "cat"
+            ]
+          },
+          "catnipDose": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": [
+          "type",
+          "catnipDose"
+        ],
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PetBase"
+          }
+        ]
+      },
+      "Dog": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "dog"
+            ]
+          },
+          "nextWalkTime": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "type",
+          "nextWalkTime"
+        ],
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PetBase"
+          }
+        ]
+      },
+      "PetBase": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      }
+    }
+  }
+}

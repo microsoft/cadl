@@ -1,6 +1,15 @@
 # Change Log - @cadl-lang/openapi
 
-This log was last generated on Thu, 31 Mar 2022 17:10:49 GMT and should not be manually modified.
+This log was last generated on Fri, 06 May 2022 17:19:57 GMT and should not be manually modified.
+
+## 0.9.0
+Fri, 06 May 2022 17:19:57 GMT
+
+### Minor changes
+
+- Move decorators into `OpenAPI` namespace
+- Remove node 14 support
+- Add shared helpers for OpenAPI 2 and 3 emit
 
 ## 0.8.0
 Thu, 31 Mar 2022 17:10:49 GMT

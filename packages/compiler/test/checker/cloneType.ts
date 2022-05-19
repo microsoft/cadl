@@ -36,7 +36,7 @@ describe("compiler: type cloning", () => {
       const { test } = (await testHost.compile("./test.cadl")) as {
         test: Type;
       };
-      const clone = testHost.program.checker!.cloneType(test);
+      const clone = testHost.program.checker.cloneType(test);
       ok(blues.has(clone!), "the clone is blue");
       deepStrictEqual(test, clone!);
     });

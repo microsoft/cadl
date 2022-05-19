@@ -1,0 +1,129 @@
+[
+  {
+    "taskType": "trigger",
+    "capabilityId": "IssueResponder",
+    "subCapability": "IssuesOnlyResponder",
+    "version": "1.0",
+    "config": {
+      "taskName": "Add 'Needs Triage' label to new issues",
+      "conditions": {
+        "operator": "and",
+        "operands": [
+          {
+            "name": "isAction",
+            "parameters": {
+              "action": "opened"
+            }
+          },
+          {
+            "operator": "not",
+            "operands": [
+              {
+                "name": "isPartOfProject",
+                "parameters": {}
+              }
+            ]
+          },
+          {
+            "operator": "not",
+            "operands": [
+              {
+                "name": "isAssignedToSomeone",
+                "parameters": {}
+              }
+            ]
+          }
+        ]
+      },
+      "actions": [
+        {
+          "name": "addLabel",
+          "parameters": {
+            "label": "Needs Triage"
+          }
+        }
+      ],
+      "eventType": "issue",
+      "eventNames": ["issues", "project_card"]
+    }
+  },
+  {
+    "taskType": "trigger",
+    "capabilityId": "IssueResponder",
+    "subCapability": "IssuesOnlyResponder",
+    "version": "1.0",
+    "config": {
+      "conditions": {
+        "operator": "and",
+        "operands": [
+          {
+            "name": "isAction",
+            "parameters": {
+              "action": "opened"
+            }
+          },
+          {
+            "operator": "and",
+            "operands": [
+              {
+                "operator": "not",
+                "operands": [
+                  {
+                    "name": "activitySenderHasPermissions",
+                    "parameters": {
+                      "permissions": "write"
+                    }
+                  }
+                ]
+              },
+              {
+                "operator": "not",
+                "operands": [
+                  {
+                    "name": "activitySenderHasAssociation",
+                    "parameters": {
+                      "association": "MEMBER"
+                    }
+                  }
+                ]
+              },
+              {
+                "operator": "not",
+                "operands": [
+                  {
+                    "name": "activitySenderHasAssociation",
+                    "parameters": {
+                      "association": "COLLABORATOR"
+                    }
+                  }
+                ]
+              },
+              {
+                "operator": "not",
+                "operands": [
+                  {
+                    "name": "activitySenderHasPermissions",
+                    "parameters": {
+                      "permissions": "admin"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "eventType": "issue",
+      "eventNames": ["issues", "project_card"],
+      "taskName": "Add customer-reported label to issues coming from non-collaborators",
+      "actions": [
+        {
+          "name": "addLabel",
+          "parameters": {
+            "label": "customer-reported"
+          }
+        }
+      ]
+    }
+  }
+]

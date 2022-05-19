@@ -2,6 +2,18 @@
   "name": "tmlanguage-generator",
   "entries": [
     {
+      "version": "0.3.0",
+      "tag": "tmlanguage-generator_v0.3.0",
+      "date": "Fri, 06 May 2022 17:19:57 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Remove node 14 support"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.2.3",
       "tag": "tmlanguage-generator_v0.2.3",
       "date": "Thu, 31 Mar 2022 17:10:49 GMT",

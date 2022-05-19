@@ -33,6 +33,10 @@
   "paths": {
     "/foo/{id}": {
       "get": {
+        "tags": [
+          "foo",
+          "tag1"
+        ],
         "operationId": "Foo_read",
         "description": "includes namespace tag",
         "parameters": [
@@ -50,13 +54,14 @@
           "204": {
             "description": "No Content"
           }
-        },
-        "tags": [
-          "foo",
-          "tag1"
-        ]
+        }
       },
       "post": {
+        "tags": [
+          "foo",
+          "tag1",
+          "tag2"
+        ],
         "operationId": "Foo_create",
         "description": "includes namespace tag and two operations tags",
         "parameters": [
@@ -74,12 +79,7 @@
           "204": {
             "description": "No Content"
           }
-        },
-        "tags": [
-          "foo",
-          "tag1",
-          "tag2"
-        ]
+        }
       }
     },
     "/bar": {
@@ -107,6 +107,9 @@
     },
     "/bar/{id}": {
       "post": {
+        "tags": [
+          "tag3"
+        ],
         "operationId": "Bar_create",
         "description": "one operation tag",
         "parameters": [
@@ -124,14 +127,17 @@
           "204": {
             "description": "No Content"
           }
-        },
-        "tags": [
-          "tag3"
-        ]
+        }
       }
     },
     "/nested/{id}": {
       "post": {
+        "tags": [
+          "outer",
+          "inner",
+          "moreInner",
+          "innerOp"
+        ],
         "operationId": "NestedMoreInner_createOther",
         "parameters": [
           {
@@ -148,13 +154,7 @@
           "204": {
             "description": "No Content"
           }
-        },
-        "tags": [
-          "outer",
-          "inner",
-          "moreInner",
-          "innerOp"
-        ]
+        }
       }
     }
   },

@@ -3,12 +3,12 @@ interface Foo {
   y(x: int32, y: int32): int32;
 }
 
-interface Bar mixes ResourceOperations<BarResource> {
+interface Bar extends ResourceOperations<BarResource> {
   blerp(n: int32): string;
 }
 
 interface Baz
-  mixes ResourceRead<BarResource>,
+  extends ResourceRead<BarResource>,
     ResourceCreate<BarResource>,
     ResourceDelete<BarResource> {
   glorp(n: int32): string;

@@ -34,6 +34,7 @@ model ResourceCollectionParameters<TResource> {
 }
 
 @validateHasKey(TResource)
+@validateIsError(TError)
 interface ResourceRead<TResource, TError> {
   @autoRoute
   @doc("Gets an instance of the resource.")
@@ -68,6 +69,7 @@ interface ResourceCreate<TResource, TError> {
 }
 
 @validateHasKey(TResource)
+@validateIsError(TError)
 interface ResourceUpdate<TResource, TError> {
   @autoRoute
   @doc("Updates an existing instance of the resource.")
@@ -86,6 +88,7 @@ model ResourceDeletedResponse {
 }
 
 @validateHasKey(TResource)
+@validateIsError(TError)
 interface ResourceDelete<TResource, TError> {
   @autoRoute
   @doc("Deletes an existing instance of the resource.")
@@ -110,22 +113,26 @@ interface ResourceList<TResource, TError> {
 }
 
 @validateHasKey(TResource)
+@validateIsError(TError)
 interface ResourceInstanceOperations<TResource, TError>
-  mixes ResourceRead<TResource, TError>,
+  extends ResourceRead<TResource, TError>,
     ResourceUpdate<TResource, TError>,
     ResourceDelete<TResource, TError> {}
 
 @validateHasKey(TResource)
+@validateIsError(TError)
 interface ResourceCollectionOperations<TResource, TError>
-  mixes ResourceCreate<TResource, TError>,
+  extends ResourceCreate<TResource, TError>,
     ResourceList<TResource, TError> {}
 
 @validateHasKey(TResource)
+@validateIsError(TError)
 interface ResourceOperations<TResource, TError>
-  mixes ResourceInstanceOperations<TResource, TError>,
+  extends ResourceInstanceOperations<TResource, TError>,
     ResourceCollectionOperations<TResource, TError> {}
 
 @validateHasKey(TResource)
+@validateIsError(TError)
 interface SingletonResourceRead<TSingleton, TResource, TError> {
   @autoRoute
   @doc("Gets the singleton resource.")
@@ -135,6 +142,7 @@ interface SingletonResourceRead<TSingleton, TResource, TError> {
 }
 
 @validateHasKey(TResource)
+@validateIsError(TError)
 interface SingletonResourceUpdate<TSingleton, TResource, TError> {
   @autoRoute
   @doc("Updates the singleton resource.")
@@ -147,10 +155,11 @@ interface SingletonResourceUpdate<TSingleton, TResource, TError> {
 }
 
 interface SingletonResourceOperations<TSingleton, TResource, TError>
-  mixes SingletonResourceRead<TSingleton, TResource, TError>,
+  extends SingletonResourceRead<TSingleton, TResource, TError>,
     SingletonResourceUpdate<TSingleton, TResource, TError> {}
 
 @validateHasKey(TResource)
+@validateIsError(TError)
 interface ExtensionResourceRead<TExtension, TResource, TError> {
   @autoRoute
   @doc("Gets an instance of the extension resource.")
@@ -211,14 +220,14 @@ interface ExtensionResourceList<TExtension, TResource, TError> {
 }
 
 interface ExtensionResourceInstanceOperations<TExtension, TResource, TError>
-  mixes ExtensionResourceRead<TExtension, TResource, TError>,
+  extends ExtensionResourceRead<TExtension, TResource, TError>,
     ExtensionResourceUpdate<TExtension, TResource, TError>,
     ExtensionResourceDelete<TExtension, TResource, TError> {}
 
 interface ExtensionResourceCollectionOperations<TExtension, TResource, TError>
-  mixes ExtensionResourceCreate<TExtension, TResource, TError>,
+  extends ExtensionResourceCreate<TExtension, TResource, TError>,
     ExtensionResourceList<TExtension, TResource, TError> {}
 
 interface ExtensionResourceOperations<TExtension, TResource, TError>
-  mixes ExtensionResourceInstanceOperations<TExtension, TResource, TError>,
+  extends ExtensionResourceInstanceOperations<TExtension, TResource, TError>,
     ExtensionResourceCollectionOperations<TExtension, TResource, TError> {}

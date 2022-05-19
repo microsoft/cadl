@@ -47,6 +47,7 @@ function main() {
   server = s;
   s.log(`Cadl language server v${cadlVersion}`);
   s.log("Module", fileURLToPath(import.meta.url));
+  s.log("Process ID", process.pid);
   s.log("Command Line", process.argv);
 
   connection.onInitialize((params) => {
@@ -66,6 +67,9 @@ function main() {
   connection.onDidChangeWatchedFiles(s.watchedFilesChanged);
   connection.onDefinition(s.gotoDefinition);
   connection.onCompletion(s.complete);
+  connection.onReferences(s.findReferences);
+  connection.onRenameRequest(s.rename);
+  connection.onPrepareRename(s.prepareRename);
   documents.onDidChangeContent(s.checkChange);
   documents.onDidClose(s.documentClosed);
 

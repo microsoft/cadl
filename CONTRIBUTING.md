@@ -3,14 +3,17 @@
 - Install [Node.js](https://nodejs.org/) 14 LTS or 16 LTS
 - Install [Rush](https://rushjs.io/)
 
-```
+```bash
 npm install -g @microsoft/rush
 ```
 
 # Installing NPM dependencies
 
-```
+```bash
 rush update
+
+# To force rush to refetch the correct version of the packages
+rush update --recheck
 ```
 
 This will install all of the npm dependencies of all projects in the
@@ -24,7 +27,7 @@ using the command line.
 
 ## Rebuild the whole repo
 
-```
+```bash
 rush rebuild
 ```
 
@@ -32,7 +35,7 @@ This will build all projects in the correct dependency order.
 
 ## Build the whole repo incrementally
 
-```
+```bash
 rush build
 ```
 
@@ -41,20 +44,36 @@ dependency order.
 
 ## Build an individual package on the command line
 
-```
+```bash
 cd packages/<project>
 rushx build
 ```
 
 ## Run all tests for the whole repo
 
-```
+```bash
 rush test
+```
+
+## Start compile on save
+
+Starting this command will rebuild the typescript files on save.
+
+```bash
+rush watch
+```
+
+## Cleanup
+
+Sometimes there are ghost files left in the dist folder (common when renaming or deleting a TypeScript file), running this will get a clean state.
+
+```bash
+rush clean
 ```
 
 ## Run tests for an individual package
 
-```
+```bash
 cd packages/<project>
 rushx test
 ```
@@ -63,11 +82,11 @@ rushx test
 
 Tests sometimes log extra info using `logVerboseTestOutput` To see
 this output on the command line, set environment variable
-ADL_VERBOSE_TEST_OUPUT=true.
+CADL_VERBOSE_TEST_OUTPUT=true.
 
 ## Reformat source code
 
-```
+```bash
 rush format
 ```
 
@@ -79,6 +98,23 @@ reformatting anything using `rush check-format`.
 
 See also below for having this happen automatically in VS Code
 whenever you save.
+
+## Generate changelogs
+
+```bash
+rush change
+```
+
+PR validation enforces every changes to packages have a changelog entry.
+
+Rush change will ask for the following questions for each modified packages:
+
+- message: This should be a good description of what the changes are to this package
+- type:
+  - `major`: For a breaking change. **DO NOT USE All versions remain in 0.x stage until GA.**
+  - `minor`: A new funtionality.
+  - `patch`: A bug fix.
+  - `none`: Not relevant to the consumer of the packages. For example some added tests.
 
 # Using VS Code
 
@@ -221,3 +257,14 @@ the command line following the steps above, or build its Release
 configuration in Visual Studio, then you can install it by
 double-clicking on packages/cadl-vs/Microsoft.Cadl.VisualStudio.vsix
 that gets produced.
+
+# Pull request
+
+## Trigger Cadl Playground Try It build
+
+For contributors of the repo the build will trigger automatically but for other's forks it will need a manual trigger from a contributor.
+As a contributor you can run the following command to trigger the build and create a cadl playground link for this PR.
+
+```
+/azp run Cadl Pull Request Try It
+```

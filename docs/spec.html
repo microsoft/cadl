@@ -210,7 +210,7 @@ Search.prototype.search = function (searchString) {
   if (/^[\d.]*$/.test(searchString)) {
     results = this.biblio.clauses
       .filter(clause => clause.number.substring(0, searchString.length) === searchString)
-      .map(clause => ({ entry: clause }));
+      .map(clause => ({ key: getKey(clause), entry: clause }));
   } else {
     results = [];
 
@@ -898,6 +898,7 @@ let Toolbox = {
       e.preventDefault();
       e.stopPropagation();
       menu.togglePinEntry(this.entry.id);
+      this.$pinLink.textContent = menu._pinnedIds[this.entry.id] ? 'Unpin' : 'Pin';
     });
 
     this.$refsLink = document.createElement('a');
@@ -918,6 +919,7 @@ let Toolbox = {
     sdoBox.deactivate();
     this.active = true;
     this.entry = entry;
+    this.$pinLink.textContent = menu._pinnedIds[entry.id] ? 'Unpin' : 'Pin';
     this.$outer.classList.add('active');
     this.top = el.offsetTop - this.$outer.offsetHeight;
     this.left = el.offsetLeft - 10;
@@ -1111,6 +1113,114 @@ document.addEventListener('keypress', doShortcut);
 document.addEventListener('DOMContentLoaded', () => {
   Toolbox.init();
   referencePane.init();
+});
+
+// preserve state during navigation
+
+function getTocPath(li) {
+  let path = [];
+  let pointer = li;
+  while (true) {
+    let parent = pointer.parentElement;
+    if (parent == null) {
+      return null;
+    }
+    let index = [].indexOf.call(parent.children, pointer);
+    if (index == -1) {
+      return null;
+    }
+    path.unshift(index);
+    pointer = parent.parentElement;
+    if (pointer == null) {
+      return null;
+    }
+    if (pointer.id === 'menu-toc') {
+      break;
+    }
+    if (pointer.tagName !== 'LI') {
+      return null;
+    }
+  }
+  return path;
+}
+
+function activateTocPath(path) {
+  try {
+    let pointer = document.getElementById('menu-toc');
+    for (let index of path) {
+      pointer = pointer.querySelector('ol').children[index];
+    }
+    pointer.classList.add('active');
+  } catch (e) {
+    // pass
+  }
+}
+
+function getActiveTocPaths() {
+  return [...menu.$menu.querySelectorAll('.active')].map(getTocPath).filter(p => p != null);
+}
+
+function loadStateFromSessionStorage() {
+  if (!window.sessionStorage || typeof menu === 'undefined' || window.navigating) {
+    return;
+  }
+  if (sessionStorage.referencePaneState != null) {
+    let state = JSON.parse(sessionStorage.referencePaneState);
+    if (state != null) {
+      if (state.type === 'ref') {
+        let entry = menu.search.biblio.byId[state.id];
+        if (entry != null) {
+          referencePane.showReferencesFor(entry);
+        }
+      } else if (state.type === 'sdo') {
+        let sdos = sdoMap[state.id];
+        if (sdos != null) {
+          referencePane.$headerText.innerHTML = state.html;
+          referencePane.showSDOsBody(sdos, state.id);
+        }
+      }
+      delete sessionStorage.referencePaneState;
+    }
+  }
+
+  if (sessionStorage.activeTocPaths != null) {
+    document
+      .getElementById('menu-toc')
+      .querySelectorAll('.active')
+      .forEach(e => {
+        e.classList.remove('active');
+      });
+    let active = JSON.parse(sessionStorage.activeTocPaths);
+    active.forEach(activateTocPath);
+    delete sessionStorage.activeTocPaths;
+  }
+
+  if (sessionStorage.searchValue != null) {
+    let value = JSON.parse(sessionStorage.searchValue);
+    menu.search.$searchBox.value = value;
+    menu.search.search(value);
+    delete sessionStorage.searchValue;
+  }
+
+  if (sessionStorage.tocScroll != null) {
+    let tocScroll = JSON.parse(sessionStorage.tocScroll);
+    menu.$toc.scrollTop = tocScroll;
+    delete sessionStorage.tocScroll;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', loadStateFromSessionStorage);
+
+window.addEventListener('pageshow', loadStateFromSessionStorage);
+
+window.addEventListener('beforeunload', () => {
+  if (!window.sessionStorage || typeof menu === 'undefined') {
+    return;
+  }
+  sessionStorage.referencePaneState = JSON.stringify(referencePane.state || null);
+  sessionStorage.activeTocPaths = JSON.stringify(getActiveTocPaths());
+  sessionStorage.searchValue = JSON.stringify(menu.search.$searchBox.value);
+  sessionStorage.tocScroll = JSON.stringify(menu.$toc.scrollTop);
 });
 
 'use strict';
@@ -2420,68 +2530,138 @@ li.menu-search-result-term:before {
 <emu-clause id="lexical-grammar">
 <h1><span class="secnum">1</span> Lexical Grammar</h1>
 <emu-grammar type="definition"><emu-production name="SourceCharacter" id="prod-SourceCharacter">
-    <emu-nt><a href="#prod-SourceCharacter">SourceCharacter</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="xks4vqzw"><emu-gprose>any Unicode code point</emu-gprose></emu-rhs>
+    <emu-nt><a href="#prod-SourceCharacter">SourceCharacter</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="xks4vqzw">
+        <emu-gprose>any Unicode code point</emu-gprose>
+    </emu-rhs>
 </emu-production>
 <emu-production name="InputElement" id="prod-InputElement">
-    <emu-nt><a href="#prod-InputElement">InputElement</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="orqeuwg2"><emu-nt id="_ref_0"><a href="#prod-Token">Token</a></emu-nt></emu-rhs>
-    <emu-rhs a="kg5yghiq"><emu-nt id="_ref_1"><a href="#prod-Trivia">Trivia</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-InputElement">InputElement</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="orqeuwg2">
+        <emu-nt id="_ref_0"><a href="#prod-Token">Token</a></emu-nt>
+    </emu-rhs>
+    <emu-rhs a="kg5yghiq">
+        <emu-nt id="_ref_1"><a href="#prod-Trivia">Trivia</a></emu-nt>
+    </emu-rhs>
 </emu-production>
 <emu-production name="Token" id="prod-Token">
-    <emu-nt><a href="#prod-Token">Token</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="o5jua5_x"><emu-nt id="_ref_2"><a href="#prod-Keyword">Keyword</a></emu-nt></emu-rhs>
-    <emu-rhs a="bras6mo_"><emu-nt id="_ref_3"><a href="#prod-Identifier">Identifier</a></emu-nt></emu-rhs>
-    <emu-rhs a="pui0b1rt"><emu-nt id="_ref_4"><a href="#prod-NumericLiteral">NumericLiteral</a></emu-nt></emu-rhs>
-    <emu-rhs a="xhtltz00"><emu-nt id="_ref_5"><a href="#prod-StringLiteral">StringLiteral</a></emu-nt></emu-rhs>
-    <emu-rhs a="7hjz1m8p"><emu-nt id="_ref_6"><a href="#prod-Punctuator">Punctuator</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-Token">Token</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="o5jua5_x">
+        <emu-nt id="_ref_2"><a href="#prod-Keyword">Keyword</a></emu-nt>
+    </emu-rhs>
+    <emu-rhs a="bras6mo_">
+        <emu-nt id="_ref_3"><a href="#prod-Identifier">Identifier</a></emu-nt>
+    </emu-rhs>
+    <emu-rhs a="pui0b1rt">
+        <emu-nt id="_ref_4"><a href="#prod-NumericLiteral">NumericLiteral</a></emu-nt>
+    </emu-rhs>
+    <emu-rhs a="xhtltz00">
+        <emu-nt id="_ref_5"><a href="#prod-StringLiteral">StringLiteral</a></emu-nt>
+    </emu-rhs>
+    <emu-rhs a="7hjz1m8p">
+        <emu-nt id="_ref_6"><a href="#prod-Punctuator">Punctuator</a></emu-nt>
+    </emu-rhs>
 </emu-production>
 <emu-production name="Trivia" id="prod-Trivia">
-    <emu-nt><a href="#prod-Trivia">Trivia</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="ft16wloj"><emu-nt id="_ref_7"><a href="#prod-Comment">Comment</a></emu-nt></emu-rhs>
-    <emu-rhs a="fctcswat"><emu-nt id="_ref_8"><a href="#prod-WhiteSpace">WhiteSpace</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-Trivia">Trivia</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="ft16wloj">
+        <emu-nt id="_ref_7"><a href="#prod-Comment">Comment</a></emu-nt>
+    </emu-rhs>
+    <emu-rhs a="fctcswat">
+        <emu-nt id="_ref_8"><a href="#prod-WhiteSpace">WhiteSpace</a></emu-nt>
+    </emu-rhs>
 </emu-production>
 <emu-production name="Keyword" id="prod-Keyword">
-    <emu-nt><a href="#prod-Keyword">Keyword</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="nqjh_sxl"><emu-nt id="_ref_9"><a href="#prod-BooleanLiteral">BooleanLiteral</a></emu-nt></emu-rhs>
-    <emu-rhs a="azcs9apw"><emu-t>import</emu-t></emu-rhs>
-    <emu-rhs a="-mdwbm0b"><emu-t>model</emu-t></emu-rhs>
-    <emu-rhs a="lpev-y-g"><emu-t>namespace</emu-t></emu-rhs>
-    <emu-rhs a="ytodrzn0"><emu-t>op</emu-t></emu-rhs>
-    <emu-rhs a="rmwjtwx9"><emu-t>extends</emu-t></emu-rhs>
-    <emu-rhs a="8d2nu2lj"><emu-t>using</emu-t></emu-rhs>
-    <emu-rhs a="71rsbeuh"><emu-t>interface</emu-t></emu-rhs>
-    <emu-rhs a="hgzzvb8j"><emu-t>union</emu-t></emu-rhs>
-    <emu-rhs a="4iwu-ggn"><emu-t>projection</emu-t></emu-rhs>
-    <emu-rhs a="llgnlz3m"><emu-t>void</emu-t></emu-rhs>
-    <emu-rhs a="vpa-nv19"><emu-t>never</emu-t></emu-rhs>
+    <emu-nt><a href="#prod-Keyword">Keyword</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="nqjh_sxl">
+        <emu-nt id="_ref_9"><a href="#prod-BooleanLiteral">BooleanLiteral</a></emu-nt>
+    </emu-rhs>
+    <emu-rhs a="azcs9apw">
+        <emu-t>import</emu-t>
+    </emu-rhs>
+    <emu-rhs a="-mdwbm0b">
+        <emu-t>model</emu-t>
+    </emu-rhs>
+    <emu-rhs a="lpev-y-g">
+        <emu-t>namespace</emu-t>
+    </emu-rhs>
+    <emu-rhs a="ytodrzn0">
+        <emu-t>op</emu-t>
+    </emu-rhs>
+    <emu-rhs a="rmwjtwx9">
+        <emu-t>extends</emu-t>
+    </emu-rhs>
+    <emu-rhs a="8d2nu2lj">
+        <emu-t>using</emu-t>
+    </emu-rhs>
+    <emu-rhs a="71rsbeuh">
+        <emu-t>interface</emu-t>
+    </emu-rhs>
+    <emu-rhs a="hgzzvb8j">
+        <emu-t>union</emu-t>
+    </emu-rhs>
+    <emu-rhs a="4iwu-ggn">
+        <emu-t>projection</emu-t>
+    </emu-rhs>
+    <emu-rhs a="llgnlz3m">
+        <emu-t>void</emu-t>
+    </emu-rhs>
+    <emu-rhs a="vpa-nv19">
+        <emu-t>never</emu-t>
+    </emu-rhs>
 </emu-production>
 <emu-production name="Identifier" id="prod-Identifier">
-    <emu-nt><a href="#prod-Identifier">Identifier</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="exwdmcdi"><emu-nt id="_ref_10"><a href="#prod-IdentifierName">IdentifierName</a></emu-nt> <emu-gmod>but not <emu-nt id="_ref_11"><a href="#prod-Keyword">Keyword</a></emu-nt></emu-gmod></emu-rhs>
+    <emu-nt><a href="#prod-Identifier">Identifier</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="exwdmcdi">
+        <emu-nt id="_ref_10"><a href="#prod-IdentifierName">IdentifierName</a></emu-nt> <emu-gmod>but not <emu-nt id="_ref_11"><a href="#prod-Keyword">Keyword</a></emu-nt></emu-gmod>
+    </emu-rhs>
 </emu-production>
 <emu-production name="IdentifierName" id="prod-IdentifierName">
-    <emu-nt><a href="#prod-IdentifierName">IdentifierName</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="q0afq8g8"><emu-nt id="_ref_12"><a href="#prod-IdentifierStart">IdentifierStart</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-IdentifierName">IdentifierName</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="q0afq8g8">
+        <emu-nt id="_ref_12"><a href="#prod-IdentifierStart">IdentifierStart</a></emu-nt>
+    </emu-rhs>
     <emu-rhs a="amguopqs">
         <emu-nt id="_ref_13"><a href="#prod-IdentifierName">IdentifierName</a></emu-nt>
         <emu-nt id="_ref_14"><a href="#prod-IdentifierContinue">IdentifierContinue</a></emu-nt>
     </emu-rhs>
 </emu-production>
 <emu-production name="IdentifierStart" id="prod-IdentifierStart">
-    <emu-nt><a href="#prod-IdentifierStart">IdentifierStart</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="exubo7yu"><emu-nt id="_ref_15"><a href="#prod-IdentifierContinue">IdentifierContinue</a></emu-nt> <emu-gmod>but not <emu-nt id="_ref_16"><a href="#prod-DecimalDigit">DecimalDigit</a></emu-nt></emu-gmod></emu-rhs>
+    <emu-nt><a href="#prod-IdentifierStart">IdentifierStart</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="exubo7yu">
+        <emu-nt id="_ref_15"><a href="#prod-IdentifierContinue">IdentifierContinue</a></emu-nt> <emu-gmod>but not <emu-nt id="_ref_16"><a href="#prod-DecimalDigit">DecimalDigit</a></emu-nt></emu-gmod>
+    </emu-rhs>
 </emu-production>
 <emu-production name="IdentifierContinue" id="prod-IdentifierContinue">
-    <emu-nt><a href="#prod-IdentifierContinue">IdentifierContinue</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="7q8tumk4"><emu-nt id="_ref_17"><a href="#prod-AsciiLetter">AsciiLetter</a></emu-nt></emu-rhs>
-    <emu-rhs a="s4me4hlz"><emu-nt id="_ref_18"><a href="#prod-DecimalDigit">DecimalDigit</a></emu-nt></emu-rhs>
-    <emu-rhs a="emlmkqfm"><emu-t>$</emu-t></emu-rhs>
-    <emu-rhs a="b1zllonv"><emu-t>_</emu-t></emu-rhs>
-    <emu-rhs a="bpnwye-j"><emu-gprose>any assigned Unicode code point greater than U+007F that does not have any of the following property values: General_Category=Surrogate, Control or Private_Use, Noncharacter_Code_Point=True, or Pattern_White_Space=True</emu-gprose></emu-rhs>
+    <emu-nt><a href="#prod-IdentifierContinue">IdentifierContinue</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="7q8tumk4">
+        <emu-nt id="_ref_17"><a href="#prod-AsciiLetter">AsciiLetter</a></emu-nt>
+    </emu-rhs>
+    <emu-rhs a="s4me4hlz">
+        <emu-nt id="_ref_18"><a href="#prod-DecimalDigit">DecimalDigit</a></emu-nt>
+    </emu-rhs>
+    <emu-rhs a="emlmkqfm">
+        <emu-t>$</emu-t>
+    </emu-rhs>
+    <emu-rhs a="b1zllonv">
+        <emu-t>_</emu-t>
+    </emu-rhs>
+    <emu-rhs a="hj5v3eoy">
+        <emu-gprose>any assigned Unicode code point other than U+FFFD greater than U+007F that does not have any of the following property values: General_Category=Surrogate, Control or Private_Use, Noncharacter_Code_Point=True, or Pattern_White_Space=True</emu-gprose>
+    </emu-rhs>
 </emu-production>
 <emu-production name="AsciiLetter" oneof="" id="prod-AsciiLetter">
     <emu-nt><a href="#prod-AsciiLetter">AsciiLetter</a></emu-nt> <emu-geq>:</emu-geq> <emu-oneof>one of</emu-oneof> <emu-rhs><emu-t>A</emu-t> <emu-t>B</emu-t> <emu-t>C</emu-t> <emu-t>D</emu-t> <emu-t>E</emu-t> <emu-t>F</emu-t> <emu-t>G</emu-t> <emu-t>H</emu-t> <emu-t>I</emu-t> <emu-t>J</emu-t> <emu-t>K</emu-t> <emu-t>L</emu-t> <emu-t>M</emu-t> <emu-t>N</emu-t> <emu-t>O</emu-t> <emu-t>P</emu-t> <emu-t>Q</emu-t> <emu-t>R</emu-t> <emu-t>S</emu-t> <emu-t>T</emu-t> <emu-t>U</emu-t> <emu-t>V</emu-t> <emu-t>W</emu-t> <emu-t>X</emu-t> <emu-t>Y</emu-t> <emu-t>Z</emu-t> <emu-t>a</emu-t> <emu-t>b</emu-t> <emu-t>c</emu-t> <emu-t>d</emu-t> <emu-t>e</emu-t> <emu-t>f</emu-t> <emu-t>g</emu-t> <emu-t>h</emu-t> <emu-t>i</emu-t> <emu-t>j</emu-t> <emu-t>k</emu-t> <emu-t>l</emu-t> <emu-t>m</emu-t> <emu-t>n</emu-t> <emu-t>o</emu-t> <emu-t>p</emu-t> <emu-t>q</emu-t> <emu-t>r</emu-t> <emu-t>s</emu-t> <emu-t>t</emu-t> <emu-t>u</emu-t> <emu-t>v</emu-t> <emu-t>w</emu-t> <emu-t>x</emu-t> <emu-t>y</emu-t> <emu-t>z</emu-t></emu-rhs>
 </emu-production>
 <emu-production name="BooleanLiteral" id="prod-BooleanLiteral">
-    <emu-nt><a href="#prod-BooleanLiteral">BooleanLiteral</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="-jc4xg27"><emu-t>true</emu-t></emu-rhs>
-    <emu-rhs a="i9lgnxtt"><emu-t>false</emu-t></emu-rhs>
+    <emu-nt><a href="#prod-BooleanLiteral">BooleanLiteral</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="-jc4xg27">
+        <emu-t>true</emu-t>
+    </emu-rhs>
+    <emu-rhs a="i9lgnxtt">
+        <emu-t>false</emu-t>
+    </emu-rhs>
 </emu-production>
 <emu-production name="NumericLiteral" id="prod-NumericLiteral">
-    <emu-nt><a href="#prod-NumericLiteral">NumericLiteral</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="gma1bw5s"><emu-nt id="_ref_19"><a href="#prod-DecimalLiteral">DecimalLiteral</a></emu-nt></emu-rhs>
-    <emu-rhs a="hqxkzjla"><emu-nt id="_ref_20"><a href="#prod-HexIntegerLiteral">HexIntegerLiteral</a></emu-nt></emu-rhs>
-    <emu-rhs a="09cd3aiw"><emu-nt id="_ref_21"><a href="#prod-BinaryIntegerLiteral">BinaryIntegerLiteral</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-NumericLiteral">NumericLiteral</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="gma1bw5s">
+        <emu-nt id="_ref_19"><a href="#prod-DecimalLiteral">DecimalLiteral</a></emu-nt>
+    </emu-rhs>
+    <emu-rhs a="hqxkzjla">
+        <emu-nt id="_ref_20"><a href="#prod-HexIntegerLiteral">HexIntegerLiteral</a></emu-nt>
+    </emu-rhs>
+    <emu-rhs a="09cd3aiw">
+        <emu-nt id="_ref_21"><a href="#prod-BinaryIntegerLiteral">BinaryIntegerLiteral</a></emu-nt>
+    </emu-rhs>
 </emu-production>
 <emu-production name="DecimalLiteral" id="prod-DecimalLiteral">
     <emu-nt><a href="#prod-DecimalLiteral">DecimalLiteral</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="3xiaxvcb">
@@ -2496,7 +2676,9 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="DecimalIntegerLiteral" id="prod-DecimalIntegerLiteral">
-    <emu-nt><a href="#prod-DecimalIntegerLiteral">DecimalIntegerLiteral</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="bxtox5eb"><emu-nt id="_ref_27"><a href="#prod-DecimalDigits">DecimalDigits</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-DecimalIntegerLiteral">DecimalIntegerLiteral</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="bxtox5eb">
+        <emu-nt id="_ref_27"><a href="#prod-DecimalDigits">DecimalDigits</a></emu-nt>
+    </emu-rhs>
     <emu-rhs a="o9f-v3mh">
         <emu-t>+</emu-t>
         <emu-nt id="_ref_28"><a href="#prod-DecimalDigits">DecimalDigits</a></emu-nt>
@@ -2507,7 +2689,9 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="DecimalDigits" id="prod-DecimalDigits">
-    <emu-nt><a href="#prod-DecimalDigits">DecimalDigits</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="s4me4hlz"><emu-nt id="_ref_30"><a href="#prod-DecimalDigit">DecimalDigit</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-DecimalDigits">DecimalDigits</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="s4me4hlz">
+        <emu-nt id="_ref_30"><a href="#prod-DecimalDigit">DecimalDigit</a></emu-nt>
+    </emu-rhs>
     <emu-rhs a="nyugv7lw">
         <emu-nt id="_ref_31"><a href="#prod-DecimalDigits">DecimalDigits</a></emu-nt>
         <emu-nt id="_ref_32"><a href="#prod-DecimalDigit">DecimalDigit</a></emu-nt>
@@ -2523,7 +2707,9 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="DecimalIntegerInteger" id="prod-DecimalIntegerInteger">
-    <emu-nt><a href="#prod-DecimalIntegerInteger">DecimalIntegerInteger</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="bxtox5eb"><emu-nt id="_ref_34"><a href="#prod-DecimalDigits">DecimalDigits</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-DecimalIntegerInteger">DecimalIntegerInteger</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="bxtox5eb">
+        <emu-nt id="_ref_34"><a href="#prod-DecimalDigits">DecimalDigits</a></emu-nt>
+    </emu-rhs>
     <emu-rhs a="o9f-v3mh">
         <emu-t>+</emu-t>
         <emu-nt id="_ref_35"><a href="#prod-DecimalDigits">DecimalDigits</a></emu-nt>
@@ -2540,7 +2726,9 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="HexDigits" id="prod-HexDigits">
-    <emu-nt><a href="#prod-HexDigits">HexDigits</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="omskcs0d"><emu-nt id="_ref_38"><a href="#prod-HexDigit">HexDigit</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-HexDigits">HexDigits</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="omskcs0d">
+        <emu-nt id="_ref_38"><a href="#prod-HexDigit">HexDigit</a></emu-nt>
+    </emu-rhs>
     <emu-rhs a="yciymy2l">
         <emu-nt id="_ref_39"><a href="#prod-HexDigits">HexDigits</a></emu-nt>
         <emu-nt id="_ref_40"><a href="#prod-HexDigit">HexDigit</a></emu-nt>
@@ -2556,7 +2744,9 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="BinaryDigits" id="prod-BinaryDigits">
-    <emu-nt><a href="#prod-BinaryDigits">BinaryDigits</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="5fhui2lc"><emu-nt id="_ref_42"><a href="#prod-BinaryDigit">BinaryDigit</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-BinaryDigits">BinaryDigits</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="5fhui2lc">
+        <emu-nt id="_ref_42"><a href="#prod-BinaryDigit">BinaryDigit</a></emu-nt>
+    </emu-rhs>
     <emu-rhs a="gqp0qw4u">
         <emu-nt id="_ref_43"><a href="#prod-BinaryDigits">BinaryDigits</a></emu-nt>
         <emu-nt id="_ref_44"><a href="#prod-BinaryDigit">BinaryDigit</a></emu-nt>
@@ -2584,7 +2774,9 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="StringCharacter" id="prod-StringCharacter">
-    <emu-nt><a href="#prod-StringCharacter">StringCharacter</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="qh-v7bpd"><emu-nt id="_ref_49"><a href="#prod-SourceCharacter">SourceCharacter</a></emu-nt> <emu-gmod>but not one of <emu-t>"</emu-t> or <emu-t>\</emu-t> or <emu-nt><a href="https://tc39.es/ecma262/#prod-LineTerminator">LineTerminator</a></emu-nt></emu-gmod></emu-rhs>
+    <emu-nt><a href="#prod-StringCharacter">StringCharacter</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="qh-v7bpd">
+        <emu-nt id="_ref_49"><a href="#prod-SourceCharacter">SourceCharacter</a></emu-nt> <emu-gmod>but not one of <emu-t>"</emu-t> or <emu-t>\</emu-t> or <emu-nt>LineTerminator</emu-nt></emu-gmod>
+    </emu-rhs>
     <emu-rhs a="o0wqskax">
         <emu-t>\</emu-t>
         <emu-nt id="_ref_50"><a href="#prod-EscapeCharacter">EscapeCharacter</a></emu-nt>
@@ -2597,7 +2789,9 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="TripleQuotedStringCharacter" id="prod-TripleQuotedStringCharacter">
-    <emu-nt><a href="#prod-TripleQuotedStringCharacter">TripleQuotedStringCharacter</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="ulzuti3k"><emu-nt id="_ref_53"><a href="#prod-SourceCharacter">SourceCharacter</a></emu-nt> <emu-gmod>but not one of <emu-t>"</emu-t> or <emu-t>\</emu-t></emu-gmod></emu-rhs>
+    <emu-nt><a href="#prod-TripleQuotedStringCharacter">TripleQuotedStringCharacter</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="ulzuti3k">
+        <emu-nt id="_ref_53"><a href="#prod-SourceCharacter">SourceCharacter</a></emu-nt> <emu-gmod>but not one of <emu-t>"</emu-t> or <emu-t>\</emu-t></emu-gmod>
+    </emu-rhs>
     <emu-rhs a="o0wqskax">
         <emu-t>\</emu-t>
         <emu-nt id="_ref_54"><a href="#prod-EscapeCharacter">EscapeCharacter</a></emu-nt>
@@ -2610,21 +2804,47 @@ li.menu-search-result-term:before {
     <emu-nt><a href="#prod-Punctuator">Punctuator</a></emu-nt> <emu-geq>:</emu-geq> <emu-oneof>one of</emu-oneof> <emu-rhs><emu-t>|</emu-t> <emu-t>?</emu-t> <emu-t>=</emu-t> <emu-t>&amp;</emu-t> <emu-t>:</emu-t> <emu-t>,</emu-t> <emu-t>;</emu-t> <emu-t>.</emu-t> <emu-t>&lt;</emu-t> <emu-t>&gt;</emu-t> <emu-t>(</emu-t> <emu-t>)</emu-t> <emu-t>{</emu-t> <emu-t>}</emu-t> <emu-t>[</emu-t> <emu-t>]</emu-t> <emu-t>@</emu-t> <emu-t>...</emu-t> <emu-t>#</emu-t></emu-rhs>
 </emu-production>
 <emu-production name="WhiteSpace" id="prod-WhiteSpace">
-    <emu-nt><a href="#prod-WhiteSpace">WhiteSpace</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="k4soaizl"><emu-gprose>&lt;TAB&gt;</emu-gprose></emu-rhs>
-    <emu-rhs a="eznvjwhz"><emu-gprose>&lt;LF&gt;</emu-gprose></emu-rhs>
-    <emu-rhs a="w_cit1lu"><emu-gprose>&lt;VT&gt;</emu-gprose></emu-rhs>
-    <emu-rhs a="dvfflmsr"><emu-gprose>&lt;FF&gt;</emu-gprose></emu-rhs>
-    <emu-rhs a="q1yr1eki"><emu-gprose>&lt;CR&gt;</emu-gprose></emu-rhs>
-    <emu-rhs a="01dfufyk"><emu-gprose>&lt;SP&gt;</emu-gprose></emu-rhs>
-    <emu-rhs a="_fwb4uzc"><emu-gprose>&lt;NEL&gt;</emu-gprose></emu-rhs>
-    <emu-rhs a="rdfm2xfx"><emu-gprose>&lt;LRM&gt;</emu-gprose></emu-rhs>
-    <emu-rhs a="t_zqlt0-"><emu-gprose>&lt;RLM&gt;</emu-gprose></emu-rhs>
-    <emu-rhs a="eaiqsw9w"><emu-gprose>&lt;LS&gt;</emu-gprose></emu-rhs>
-    <emu-rhs a="z8h10fxn"><emu-gprose>&lt;PS&gt;</emu-gprose></emu-rhs>
+    <emu-nt><a href="#prod-WhiteSpace">WhiteSpace</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="k4soaizl">
+        <emu-gprose>&lt;TAB&gt;</emu-gprose>
+    </emu-rhs>
+    <emu-rhs a="eznvjwhz">
+        <emu-gprose>&lt;LF&gt;</emu-gprose>
+    </emu-rhs>
+    <emu-rhs a="w_cit1lu">
+        <emu-gprose>&lt;VT&gt;</emu-gprose>
+    </emu-rhs>
+    <emu-rhs a="dvfflmsr">
+        <emu-gprose>&lt;FF&gt;</emu-gprose>
+    </emu-rhs>
+    <emu-rhs a="q1yr1eki">
+        <emu-gprose>&lt;CR&gt;</emu-gprose>
+    </emu-rhs>
+    <emu-rhs a="01dfufyk">
+        <emu-gprose>&lt;SP&gt;</emu-gprose>
+    </emu-rhs>
+    <emu-rhs a="_fwb4uzc">
+        <emu-gprose>&lt;NEL&gt;</emu-gprose>
+    </emu-rhs>
+    <emu-rhs a="rdfm2xfx">
+        <emu-gprose>&lt;LRM&gt;</emu-gprose>
+    </emu-rhs>
+    <emu-rhs a="t_zqlt0-">
+        <emu-gprose>&lt;RLM&gt;</emu-gprose>
+    </emu-rhs>
+    <emu-rhs a="eaiqsw9w">
+        <emu-gprose>&lt;LS&gt;</emu-gprose>
+    </emu-rhs>
+    <emu-rhs a="z8h10fxn">
+        <emu-gprose>&lt;PS&gt;</emu-gprose>
+    </emu-rhs>
 </emu-production>
 <emu-production name="Comment" id="prod-Comment">
-    <emu-nt><a href="#prod-Comment">Comment</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="sieyeref"><emu-nt id="_ref_55"><a href="#prod-MultiLineComment">MultiLineComment</a></emu-nt></emu-rhs>
-    <emu-rhs a="sscrkqcd"><emu-nt id="_ref_56"><a href="#prod-SingleLineComment">SingleLineComment</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-Comment">Comment</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="sieyeref">
+        <emu-nt id="_ref_55"><a href="#prod-MultiLineComment">MultiLineComment</a></emu-nt>
+    </emu-rhs>
+    <emu-rhs a="sscrkqcd">
+        <emu-nt id="_ref_56"><a href="#prod-SingleLineComment">SingleLineComment</a></emu-nt>
+    </emu-rhs>
 </emu-production>
 <emu-production name="MultiLineComment" id="prod-MultiLineComment">
     <emu-nt><a href="#prod-MultiLineComment">MultiLineComment</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="hhzm60cr">
@@ -2654,10 +2874,14 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="MultiLineNotAsteriskChar" id="prod-MultiLineNotAsteriskChar">
-    <emu-nt><a href="#prod-MultiLineNotAsteriskChar">MultiLineNotAsteriskChar</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="lflef8ko"><emu-nt id="_ref_64"><a href="#prod-SourceCharacter">SourceCharacter</a></emu-nt> <emu-gmod>but not <emu-t>*</emu-t></emu-gmod></emu-rhs>
+    <emu-nt><a href="#prod-MultiLineNotAsteriskChar">MultiLineNotAsteriskChar</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="lflef8ko">
+        <emu-nt id="_ref_64"><a href="#prod-SourceCharacter">SourceCharacter</a></emu-nt> <emu-gmod>but not <emu-t>*</emu-t></emu-gmod>
+    </emu-rhs>
 </emu-production>
 <emu-production name="MultiLineNotForwardSlashOrAsteriskChar" id="prod-MultiLineNotForwardSlashOrAsteriskChar">
-    <emu-nt><a href="#prod-MultiLineNotForwardSlashOrAsteriskChar">MultiLineNotForwardSlashOrAsteriskChar</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="hdfnrv5z"><emu-nt id="_ref_65"><a href="#prod-SourceCharacter">SourceCharacter</a></emu-nt> <emu-gmod>but not one of <emu-t>/</emu-t> or <emu-t>*</emu-t></emu-gmod></emu-rhs>
+    <emu-nt><a href="#prod-MultiLineNotForwardSlashOrAsteriskChar">MultiLineNotForwardSlashOrAsteriskChar</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="hdfnrv5z">
+        <emu-nt id="_ref_65"><a href="#prod-SourceCharacter">SourceCharacter</a></emu-nt> <emu-gmod>but not one of <emu-t>/</emu-t> or <emu-t>*</emu-t></emu-gmod>
+    </emu-rhs>
 </emu-production>
 <emu-production name="SingleLineComment" id="prod-SingleLineComment">
     <emu-nt><a href="#prod-SingleLineComment">SingleLineComment</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="u-3whel6">
@@ -2672,7 +2896,9 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="SingleLineCommentChar" id="prod-SingleLineCommentChar">
-    <emu-nt><a href="#prod-SingleLineCommentChar">SingleLineCommentChar</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="lvvfp8iw"><emu-nt id="_ref_69"><a href="#prod-SourceCharacter">SourceCharacter</a></emu-nt> <emu-gmod>but not <emu-nt><a href="https://tc39.es/ecma262/#prod-LineTerminator">LineTerminator</a></emu-nt></emu-gmod></emu-rhs>
+    <emu-nt><a href="#prod-SingleLineCommentChar">SingleLineCommentChar</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="lvvfp8iw">
+        <emu-nt id="_ref_69"><a href="#prod-SourceCharacter">SourceCharacter</a></emu-nt> <emu-gmod>but not <emu-nt>LineTerminator</emu-nt></emu-gmod>
+    </emu-rhs>
 </emu-production>
 </emu-grammar>
 </emu-clause>
@@ -2686,9 +2912,15 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="CadlScriptItem" id="prod-CadlScriptItem">
-    <emu-nt><a href="#prod-CadlScriptItem">CadlScriptItem</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="sgwx93oj"><emu-nt id="_ref_72"><a href="#prod-BlocklessNamespaceStatement">BlocklessNamespaceStatement</a></emu-nt></emu-rhs>
-    <emu-rhs a="zi_5hwi0"><emu-nt id="_ref_73"><a href="#prod-ImportStatement">ImportStatement</a></emu-nt></emu-rhs>
-    <emu-rhs a="pyyivtxj"><emu-nt id="_ref_74"><a href="#prod-Statement">Statement</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-CadlScriptItem">CadlScriptItem</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="sgwx93oj">
+        <emu-nt id="_ref_72"><a href="#prod-BlocklessNamespaceStatement">BlocklessNamespaceStatement</a></emu-nt>
+    </emu-rhs>
+    <emu-rhs a="zi_5hwi0">
+        <emu-nt id="_ref_73"><a href="#prod-ImportStatement">ImportStatement</a></emu-nt>
+    </emu-rhs>
+    <emu-rhs a="pyyivtxj">
+        <emu-nt id="_ref_74"><a href="#prod-Statement">Statement</a></emu-nt>
+    </emu-rhs>
 </emu-production>
 <emu-production name="BlocklessNamespaceStatement" id="prod-BlocklessNamespaceStatement">
     <emu-nt><a href="#prod-BlocklessNamespaceStatement">BlocklessNamespaceStatement</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="woshe1r5">
@@ -2712,14 +2944,30 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="Statement" id="prod-Statement">
-    <emu-nt><a href="#prod-Statement">Statement</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="ngbc4m7o"><emu-nt id="_ref_80"><a href="#prod-ModelStatement">ModelStatement</a></emu-nt></emu-rhs>
-    <emu-rhs a="qhwhhau7"><emu-nt id="_ref_81"><a href="#prod-InterfaceStatement">InterfaceStatement</a></emu-nt></emu-rhs>
-    <emu-rhs a="_ljtj5og"><emu-nt id="_ref_82"><a href="#prod-NamespaceStatement">NamespaceStatement</a></emu-nt></emu-rhs>
-    <emu-rhs a="qlyu8ssa"><emu-nt id="_ref_83"><a href="#prod-OperationStatement">OperationStatement</a></emu-nt></emu-rhs>
-    <emu-rhs a="rmuscggd"><emu-nt id="_ref_84"><a href="#prod-UsingStatement">UsingStatement</a></emu-nt></emu-rhs>
-    <emu-rhs a="fwtcv5di"><emu-nt id="_ref_85"><a href="#prod-EnumStatement">EnumStatement</a></emu-nt></emu-rhs>
-    <emu-rhs a="dzlcgyrg"><emu-nt id="_ref_86"><a href="#prod-AliasStatement">AliasStatement</a></emu-nt></emu-rhs>
-    <emu-rhs a="sg2sawim"><emu-t>;</emu-t></emu-rhs>
+    <emu-nt><a href="#prod-Statement">Statement</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="ngbc4m7o">
+        <emu-nt id="_ref_80"><a href="#prod-ModelStatement">ModelStatement</a></emu-nt>
+    </emu-rhs>
+    <emu-rhs a="qhwhhau7">
+        <emu-nt id="_ref_81"><a href="#prod-InterfaceStatement">InterfaceStatement</a></emu-nt>
+    </emu-rhs>
+    <emu-rhs a="_ljtj5og">
+        <emu-nt id="_ref_82"><a href="#prod-NamespaceStatement">NamespaceStatement</a></emu-nt>
+    </emu-rhs>
+    <emu-rhs a="qlyu8ssa">
+        <emu-nt id="_ref_83"><a href="#prod-OperationStatement">OperationStatement</a></emu-nt>
+    </emu-rhs>
+    <emu-rhs a="rmuscggd">
+        <emu-nt id="_ref_84"><a href="#prod-UsingStatement">UsingStatement</a></emu-nt>
+    </emu-rhs>
+    <emu-rhs a="fwtcv5di">
+        <emu-nt id="_ref_85"><a href="#prod-EnumStatement">EnumStatement</a></emu-nt>
+    </emu-rhs>
+    <emu-rhs a="dzlcgyrg">
+        <emu-nt id="_ref_86"><a href="#prod-AliasStatement">AliasStatement</a></emu-nt>
+    </emu-rhs>
+    <emu-rhs a="sg2sawim">
+        <emu-t>;</emu-t>
+    </emu-rhs>
 </emu-production>
 <emu-production name="UsingStatement" id="prod-UsingStatement">
     <emu-nt><a href="#prod-UsingStatement">UsingStatement</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="nfxtjnnc">
@@ -2761,7 +3009,9 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="ModelPropertyList" id="prod-ModelPropertyList">
-    <emu-nt><a href="#prod-ModelPropertyList">ModelPropertyList</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="ghoz7lyz"><emu-nt id="_ref_96"><a href="#prod-ModelProperty">ModelProperty</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-ModelPropertyList">ModelPropertyList</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="ghoz7lyz">
+        <emu-nt id="_ref_96"><a href="#prod-ModelProperty">ModelProperty</a></emu-nt>
+    </emu-rhs>
     <emu-rhs a="vf9tzeyl">
         <emu-nt id="_ref_97"><a href="#prod-ModelPropertyList">ModelPropertyList</a></emu-nt>
         <emu-t>,</emu-t>
@@ -2774,7 +3024,9 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="ModelProperty" id="prod-ModelProperty">
-    <emu-nt><a href="#prod-ModelProperty">ModelProperty</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="gibki9cu"><emu-nt id="_ref_101"><a href="#prod-ModelSpreadProperty">ModelSpreadProperty</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-ModelProperty">ModelProperty</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="gibki9cu">
+        <emu-nt id="_ref_101"><a href="#prod-ModelSpreadProperty">ModelSpreadProperty</a></emu-nt>
+    </emu-rhs>
     <emu-rhs a="77nrmgnp">
         <emu-nt optional="" id="_ref_102"><a href="#prod-DecoratorList">DecoratorList</a><emu-mods><emu-opt>opt</emu-opt></emu-mods></emu-nt>
         <emu-nt id="_ref_103"><a href="#prod-Identifier">Identifier</a></emu-nt>
@@ -2808,18 +3060,22 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="InterfaceHeritage" id="prod-InterfaceHeritage">
-    <emu-nt><a href="#prod-InterfaceHeritage">InterfaceHeritage</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="fy0l4eik">
-        <emu-t>mixes</emu-t>
+    <emu-nt><a href="#prod-InterfaceHeritage">InterfaceHeritage</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="ie0hgn59">
+        <emu-t>extends</emu-t>
         <emu-nt id="_ref_111"><a href="#prod-ReferenceExpressionList">ReferenceExpressionList</a></emu-nt>
     </emu-rhs>
-    <emu-rhs a="s2k4ex-k"><emu-nt>InterfaceBody</emu-nt></emu-rhs>
+    <emu-rhs a="s2k4ex-k">
+        <emu-nt>InterfaceBody</emu-nt>
+    </emu-rhs>
     <emu-rhs a="w_aa5rjr">
         <emu-nt id="_ref_112"><a href="#prod-InterfaceMemberList">InterfaceMemberList</a></emu-nt>
         <emu-t optional="">;<emu-mods><emu-opt>opt</emu-opt></emu-mods></emu-t>
     </emu-rhs>
 </emu-production>
 <emu-production name="InterfaceMemberList" id="prod-InterfaceMemberList">
-    <emu-nt><a href="#prod-InterfaceMemberList">InterfaceMemberList</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="xakzxkez"><emu-nt id="_ref_113"><a href="#prod-InterfaceMember">InterfaceMember</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-InterfaceMemberList">InterfaceMemberList</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="xakzxkez">
+        <emu-nt id="_ref_113"><a href="#prod-InterfaceMember">InterfaceMember</a></emu-nt>
+    </emu-rhs>
     <emu-rhs a="erjllshi">
         <emu-nt id="_ref_114"><a href="#prod-InterfaceMemberList">InterfaceMemberList</a></emu-nt>
         <emu-t>;</emu-t>
@@ -2855,7 +3111,9 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="UnionVariantList" id="prod-UnionVariantList">
-    <emu-nt><a href="#prod-UnionVariantList">UnionVariantList</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="cfhz-n9b"><emu-nt id="_ref_123"><a href="#prod-UnionVariant">UnionVariant</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-UnionVariantList">UnionVariantList</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="cfhz-n9b">
+        <emu-nt id="_ref_123"><a href="#prod-UnionVariant">UnionVariant</a></emu-nt>
+    </emu-rhs>
     <emu-rhs a="b_wjyurc">
         <emu-nt id="_ref_124"><a href="#prod-UnionVariantList">UnionVariantList</a></emu-nt>
         <emu-t>;</emu-t>
@@ -2897,7 +3155,9 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="EnumMemberList" id="prod-EnumMemberList">
-    <emu-nt><a href="#prod-EnumMemberList">EnumMemberList</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="vflanevg"><emu-nt id="_ref_137"><a href="#prod-EnumMember">EnumMember</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-EnumMemberList">EnumMemberList</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="vflanevg">
+        <emu-nt id="_ref_137"><a href="#prod-EnumMember">EnumMember</a></emu-nt>
+    </emu-rhs>
     <emu-rhs a="7dn-cbj2">
         <emu-nt id="_ref_138"><a href="#prod-EnumMemberList">EnumMemberList</a></emu-nt>
         <emu-t>,</emu-t>
@@ -2939,7 +3199,9 @@ li.menu-search-result-term:before {
         <emu-t>=</emu-t>
         <emu-nt id="_ref_151"><a href="#prod-Expression">Expression</a></emu-nt>
     </emu-rhs>
-    <emu-rhs a="n0rgsga2"><emu-nt>TemplateParameters</emu-nt></emu-rhs>
+    <emu-rhs a="n0rgsga2">
+        <emu-nt>TemplateParameters</emu-nt>
+    </emu-rhs>
     <emu-rhs a="bedwy-8u">
         <emu-t>&lt;</emu-t>
         <emu-nt id="_ref_152"><a href="#prod-TemplateParameterList">TemplateParameterList</a></emu-nt>
@@ -2947,7 +3209,9 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="TemplateParameterList" id="prod-TemplateParameterList">
-    <emu-nt><a href="#prod-TemplateParameterList">TemplateParameterList</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="ejiqpl9p"><emu-nt id="_ref_153"><a href="#prod-TemplateParameter">TemplateParameter</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-TemplateParameterList">TemplateParameterList</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="ejiqpl9p">
+        <emu-nt id="_ref_153"><a href="#prod-TemplateParameter">TemplateParameter</a></emu-nt>
+    </emu-rhs>
     <emu-rhs a="sxsfhd-n">
         <emu-nt id="_ref_154"><a href="#prod-TemplateParameterList">TemplateParameterList</a></emu-nt>
         <emu-t>,</emu-t>
@@ -2967,7 +3231,9 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="IdentifierList" id="prod-IdentifierList">
-    <emu-nt><a href="#prod-IdentifierList">IdentifierList</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="bras6mo_"><emu-nt id="_ref_159"><a href="#prod-Identifier">Identifier</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-IdentifierList">IdentifierList</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="bras6mo_">
+        <emu-nt id="_ref_159"><a href="#prod-Identifier">Identifier</a></emu-nt>
+    </emu-rhs>
     <emu-rhs a="btxjxlll">
         <emu-nt id="_ref_160"><a href="#prod-IdentifierList">IdentifierList</a></emu-nt>
         <emu-t>,</emu-t>
@@ -2998,10 +3264,14 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="Expression" id="prod-Expression">
-    <emu-nt><a href="#prod-Expression">Expression</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="otzlm2nv"><emu-nt id="_ref_169"><a href="#prod-UnionExpressionOrHigher">UnionExpressionOrHigher</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-Expression">Expression</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="otzlm2nv">
+        <emu-nt id="_ref_169"><a href="#prod-UnionExpressionOrHigher">UnionExpressionOrHigher</a></emu-nt>
+    </emu-rhs>
 </emu-production>
 <emu-production name="UnionExpressionOrHigher" id="prod-UnionExpressionOrHigher">
-    <emu-nt><a href="#prod-UnionExpressionOrHigher">UnionExpressionOrHigher</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="l4bpz882"><emu-nt id="_ref_170"><a href="#prod-IntersectionExpressionOrHigher">IntersectionExpressionOrHigher</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-UnionExpressionOrHigher">UnionExpressionOrHigher</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="l4bpz882">
+        <emu-nt id="_ref_170"><a href="#prod-IntersectionExpressionOrHigher">IntersectionExpressionOrHigher</a></emu-nt>
+    </emu-rhs>
     <emu-rhs a="oiwllrbb">
         <emu-t optional="">|<emu-mods><emu-opt>opt</emu-opt></emu-mods></emu-t>
         <emu-nt id="_ref_171"><a href="#prod-UnionExpressionOrHigher">UnionExpressionOrHigher</a></emu-nt>
@@ -3010,7 +3280,9 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="IntersectionExpressionOrHigher" id="prod-IntersectionExpressionOrHigher">
-    <emu-nt><a href="#prod-IntersectionExpressionOrHigher">IntersectionExpressionOrHigher</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="fxst_igc"><emu-nt id="_ref_173"><a href="#prod-ArrayExpressionOrHigher">ArrayExpressionOrHigher</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-IntersectionExpressionOrHigher">IntersectionExpressionOrHigher</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="fxst_igc">
+        <emu-nt id="_ref_173"><a href="#prod-ArrayExpressionOrHigher">ArrayExpressionOrHigher</a></emu-nt>
+    </emu-rhs>
     <emu-rhs a="cgkcj8yb">
         <emu-t optional="">&amp;<emu-mods><emu-opt>opt</emu-opt></emu-mods></emu-t>
         <emu-nt id="_ref_174"><a href="#prod-IntersectionExpressionOrHigher">IntersectionExpressionOrHigher</a></emu-nt>
@@ -3019,7 +3291,9 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="ArrayExpressionOrHigher" id="prod-ArrayExpressionOrHigher">
-    <emu-nt><a href="#prod-ArrayExpressionOrHigher">ArrayExpressionOrHigher</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="jvcvemtw"><emu-nt id="_ref_176"><a href="#prod-PrimaryExpression">PrimaryExpression</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-ArrayExpressionOrHigher">ArrayExpressionOrHigher</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="jvcvemtw">
+        <emu-nt id="_ref_176"><a href="#prod-PrimaryExpression">PrimaryExpression</a></emu-nt>
+    </emu-rhs>
     <emu-rhs a="8k-eixnj">
         <emu-nt id="_ref_177"><a href="#prod-ArrayExpressionOrHigher">ArrayExpressionOrHigher</a></emu-nt>
         <emu-t>[</emu-t>
@@ -3027,16 +3301,32 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="PrimaryExpression" id="prod-PrimaryExpression">
-    <emu-nt><a href="#prod-PrimaryExpression">PrimaryExpression</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="kul-a19e"><emu-nt id="_ref_178"><a href="#prod-Literal">Literal</a></emu-nt></emu-rhs>
-    <emu-rhs a="mpejatd_"><emu-nt id="_ref_179"><a href="#prod-ReferenceExpression">ReferenceExpression</a></emu-nt></emu-rhs>
-    <emu-rhs a="k5j7cutc"><emu-nt id="_ref_180"><a href="#prod-ParenthesizedExpression">ParenthesizedExpression</a></emu-nt></emu-rhs>
-    <emu-rhs a="d007fnkw"><emu-nt id="_ref_181"><a href="#prod-ModelExpression">ModelExpression</a></emu-nt></emu-rhs>
-    <emu-rhs a="rmcinm4a"><emu-nt id="_ref_182"><a href="#prod-TupleExpression">TupleExpression</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-PrimaryExpression">PrimaryExpression</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="kul-a19e">
+        <emu-nt id="_ref_178"><a href="#prod-Literal">Literal</a></emu-nt>
+    </emu-rhs>
+    <emu-rhs a="mpejatd_">
+        <emu-nt id="_ref_179"><a href="#prod-ReferenceExpression">ReferenceExpression</a></emu-nt>
+    </emu-rhs>
+    <emu-rhs a="k5j7cutc">
+        <emu-nt id="_ref_180"><a href="#prod-ParenthesizedExpression">ParenthesizedExpression</a></emu-nt>
+    </emu-rhs>
+    <emu-rhs a="d007fnkw">
+        <emu-nt id="_ref_181"><a href="#prod-ModelExpression">ModelExpression</a></emu-nt>
+    </emu-rhs>
+    <emu-rhs a="rmcinm4a">
+        <emu-nt id="_ref_182"><a href="#prod-TupleExpression">TupleExpression</a></emu-nt>
+    </emu-rhs>
 </emu-production>
 <emu-production name="Literal" id="prod-Literal">
-    <emu-nt><a href="#prod-Literal">Literal</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="xhtltz00"><emu-nt id="_ref_183"><a href="#prod-StringLiteral">StringLiteral</a></emu-nt></emu-rhs>
-    <emu-rhs a="nqjh_sxl"><emu-nt id="_ref_184"><a href="#prod-BooleanLiteral">BooleanLiteral</a></emu-nt></emu-rhs>
-    <emu-rhs a="pui0b1rt"><emu-nt id="_ref_185"><a href="#prod-NumericLiteral">NumericLiteral</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-Literal">Literal</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="xhtltz00">
+        <emu-nt id="_ref_183"><a href="#prod-StringLiteral">StringLiteral</a></emu-nt>
+    </emu-rhs>
+    <emu-rhs a="nqjh_sxl">
+        <emu-nt id="_ref_184"><a href="#prod-BooleanLiteral">BooleanLiteral</a></emu-nt>
+    </emu-rhs>
+    <emu-rhs a="pui0b1rt">
+        <emu-nt id="_ref_185"><a href="#prod-NumericLiteral">NumericLiteral</a></emu-nt>
+    </emu-rhs>
 </emu-production>
 <emu-production name="ReferenceExpression" id="prod-ReferenceExpression">
     <emu-nt><a href="#prod-ReferenceExpression">ReferenceExpression</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="mzr2yu9j">
@@ -3045,7 +3335,9 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="ReferenceExpressionList" id="prod-ReferenceExpressionList">
-    <emu-nt><a href="#prod-ReferenceExpressionList">ReferenceExpressionList</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="mpejatd_"><emu-nt id="_ref_188"><a href="#prod-ReferenceExpression">ReferenceExpression</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-ReferenceExpressionList">ReferenceExpressionList</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="mpejatd_">
+        <emu-nt id="_ref_188"><a href="#prod-ReferenceExpression">ReferenceExpression</a></emu-nt>
+    </emu-rhs>
     <emu-rhs a="ry70nwgl">
         <emu-nt id="_ref_189"><a href="#prod-ReferenceExpressionList">ReferenceExpressionList</a></emu-nt>
         <emu-t>,</emu-t>
@@ -3053,7 +3345,9 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="IdentifierOrMemberExpression" id="prod-IdentifierOrMemberExpression">
-    <emu-nt><a href="#prod-IdentifierOrMemberExpression">IdentifierOrMemberExpression</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="bras6mo_"><emu-nt id="_ref_191"><a href="#prod-Identifier">Identifier</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-IdentifierOrMemberExpression">IdentifierOrMemberExpression</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="bras6mo_">
+        <emu-nt id="_ref_191"><a href="#prod-Identifier">Identifier</a></emu-nt>
+    </emu-rhs>
     <emu-rhs a="fagplbkz">
         <emu-nt id="_ref_192"><a href="#prod-IdentifierOrMemberExpression">IdentifierOrMemberExpression</a></emu-nt>
         <emu-t>.</emu-t>
@@ -3089,14 +3383,16 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="TupleExpression" id="prod-TupleExpression">
-    <emu-nt><a href="#prod-TupleExpression">TupleExpression</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="mct6eje8">
+    <emu-nt><a href="#prod-TupleExpression">TupleExpression</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="lfcd3ro5">
         <emu-t>[</emu-t>
-        <emu-nt id="_ref_198"><a href="#prod-ExpressionList">ExpressionList</a></emu-nt>
+        <emu-nt optional="" id="_ref_198"><a href="#prod-ExpressionList">ExpressionList</a><emu-mods><emu-opt>opt</emu-opt></emu-mods></emu-nt>
         <emu-t>]</emu-t>
     </emu-rhs>
 </emu-production>
 <emu-production name="ExpressionList" id="prod-ExpressionList">
-    <emu-nt><a href="#prod-ExpressionList">ExpressionList</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="l7avubnp"><emu-nt id="_ref_199"><a href="#prod-Expression">Expression</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-ExpressionList">ExpressionList</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="l7avubnp">
+        <emu-nt id="_ref_199"><a href="#prod-Expression">Expression</a></emu-nt>
+    </emu-rhs>
     <emu-rhs a="8cbmyyhk">
         <emu-nt id="_ref_200"><a href="#prod-ExpressionList">ExpressionList</a></emu-nt>
         <emu-t>,</emu-t>
@@ -3136,15 +3432,29 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="ProjectionSelector" id="prod-ProjectionSelector">
-    <emu-nt><a href="#prod-ProjectionSelector">ProjectionSelector</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="-mdwbm0b"><emu-t>model</emu-t></emu-rhs>
-    <emu-rhs a="71rsbeuh"><emu-t>interface</emu-t></emu-rhs>
-    <emu-rhs a="ytodrzn0"><emu-t>op</emu-t></emu-rhs>
-    <emu-rhs a="hgzzvb8j"><emu-t>union</emu-t></emu-rhs>
-    <emu-rhs a="mpejatd_"><emu-nt id="_ref_212"><a href="#prod-ReferenceExpression">ReferenceExpression</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-ProjectionSelector">ProjectionSelector</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="-mdwbm0b">
+        <emu-t>model</emu-t>
+    </emu-rhs>
+    <emu-rhs a="71rsbeuh">
+        <emu-t>interface</emu-t>
+    </emu-rhs>
+    <emu-rhs a="ytodrzn0">
+        <emu-t>op</emu-t>
+    </emu-rhs>
+    <emu-rhs a="hgzzvb8j">
+        <emu-t>union</emu-t>
+    </emu-rhs>
+    <emu-rhs a="mpejatd_">
+        <emu-nt id="_ref_212"><a href="#prod-ReferenceExpression">ReferenceExpression</a></emu-nt>
+    </emu-rhs>
 </emu-production>
 <emu-production name="ProjectionDirection" id="prod-ProjectionDirection">
-    <emu-nt><a href="#prod-ProjectionDirection">ProjectionDirection</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="cys308sz"><emu-t>to</emu-t></emu-rhs>
-    <emu-rhs a="gbwtlciv"><emu-t>from</emu-t></emu-rhs>
+    <emu-nt><a href="#prod-ProjectionDirection">ProjectionDirection</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="cys308sz">
+        <emu-t>to</emu-t>
+    </emu-rhs>
+    <emu-rhs a="gbwtlciv">
+        <emu-t>from</emu-t>
+    </emu-rhs>
 </emu-production>
 <emu-production name="ProjectionTag" id="prod-ProjectionTag">
     <emu-nt><a href="#prod-ProjectionTag">ProjectionTag</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="pkshwqzc">
@@ -3160,10 +3470,14 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="ProjectionBody" id="prod-ProjectionBody">
-    <emu-nt><a href="#prod-ProjectionBody">ProjectionBody</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="bxmgst2s"><emu-nt id="_ref_215"><a href="#prod-ProjectionStatementList">ProjectionStatementList</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-ProjectionBody">ProjectionBody</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="bxmgst2s">
+        <emu-nt id="_ref_215"><a href="#prod-ProjectionStatementList">ProjectionStatementList</a></emu-nt>
+    </emu-rhs>
 </emu-production>
 <emu-production name="ProjectionStatementList" id="prod-ProjectionStatementList">
-    <emu-nt><a href="#prod-ProjectionStatementList">ProjectionStatementList</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="8jls0kgx"><emu-nt id="_ref_216"><a href="#prod-ProjectionStatementItem">ProjectionStatementItem</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-ProjectionStatementList">ProjectionStatementList</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="8jls0kgx">
+        <emu-nt id="_ref_216"><a href="#prod-ProjectionStatementItem">ProjectionStatementItem</a></emu-nt>
+    </emu-rhs>
     <emu-rhs a="123mhtoq">
         <emu-nt id="_ref_217"><a href="#prod-ProjectionStatementList">ProjectionStatementList</a></emu-nt>
         <emu-t>;</emu-t>
@@ -3171,20 +3485,28 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="ProjectionStatementItem" id="prod-ProjectionStatementItem">
-    <emu-nt><a href="#prod-ProjectionStatementItem">ProjectionStatementItem</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="ygil0lya"><emu-nt>ProjectionExpressionStatement</emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-ProjectionStatementItem">ProjectionStatementItem</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="ygil0lya">
+        <emu-nt>ProjectionExpressionStatement</emu-nt>
+    </emu-rhs>
 </emu-production>
 <emu-production name="ProjectionExpression" id="prod-ProjectionExpression">
-    <emu-nt><a href="#prod-ProjectionExpression">ProjectionExpression</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="vzsiuzn4"><emu-nt id="_ref_219"><a href="#prod-ProjectionReturnExpression">ProjectionReturnExpression</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-ProjectionExpression">ProjectionExpression</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="vzsiuzn4">
+        <emu-nt id="_ref_219"><a href="#prod-ProjectionReturnExpression">ProjectionReturnExpression</a></emu-nt>
+    </emu-rhs>
 </emu-production>
 <emu-production name="ProjectionReturnExpression" id="prod-ProjectionReturnExpression">
-    <emu-nt><a href="#prod-ProjectionReturnExpression">ProjectionReturnExpression</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="24gnoobj"><emu-nt id="_ref_220"><a href="#prod-ProjectionLogicalOrExpression">ProjectionLogicalOrExpression</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-ProjectionReturnExpression">ProjectionReturnExpression</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="24gnoobj">
+        <emu-nt id="_ref_220"><a href="#prod-ProjectionLogicalOrExpression">ProjectionLogicalOrExpression</a></emu-nt>
+    </emu-rhs>
     <emu-rhs a="mxa7it1a">
         <emu-t>return</emu-t>
         <emu-nt id="_ref_221"><a href="#prod-ProjectionExpression">ProjectionExpression</a></emu-nt>
     </emu-rhs>
 </emu-production>
 <emu-production name="ProjectionLogicalOrExpression" id="prod-ProjectionLogicalOrExpression">
-    <emu-nt><a href="#prod-ProjectionLogicalOrExpression">ProjectionLogicalOrExpression</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="aawamjyo"><emu-nt id="_ref_222"><a href="#prod-ProjectionLogicalAndExpression">ProjectionLogicalAndExpression</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-ProjectionLogicalOrExpression">ProjectionLogicalOrExpression</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="aawamjyo">
+        <emu-nt id="_ref_222"><a href="#prod-ProjectionLogicalAndExpression">ProjectionLogicalAndExpression</a></emu-nt>
+    </emu-rhs>
     <emu-rhs a="k589waww">
         <emu-nt id="_ref_223"><a href="#prod-ProjectionLogicalOrExpression">ProjectionLogicalOrExpression</a></emu-nt>
         <emu-t>||</emu-t>
@@ -3192,7 +3514,9 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="ProjectionLogicalAndExpression" id="prod-ProjectionLogicalAndExpression">
-    <emu-nt><a href="#prod-ProjectionLogicalAndExpression">ProjectionLogicalAndExpression</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="nttyzhj4"><emu-nt id="_ref_225"><a href="#prod-ProjectionRelationalExpression">ProjectionRelationalExpression</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-ProjectionLogicalAndExpression">ProjectionLogicalAndExpression</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="nttyzhj4">
+        <emu-nt id="_ref_225"><a href="#prod-ProjectionRelationalExpression">ProjectionRelationalExpression</a></emu-nt>
+    </emu-rhs>
     <emu-rhs a="evmo1uol">
         <emu-nt id="_ref_226"><a href="#prod-ProjectionLogicalAndExpression">ProjectionLogicalAndExpression</a></emu-nt>
         <emu-t>&amp;&amp;</emu-t>
@@ -3200,7 +3524,9 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="ProjectionEqualityExpression" id="prod-ProjectionEqualityExpression">
-    <emu-nt><a href="#prod-ProjectionEqualityExpression">ProjectionEqualityExpression</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="nttyzhj4"><emu-nt id="_ref_228"><a href="#prod-ProjectionRelationalExpression">ProjectionRelationalExpression</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-ProjectionEqualityExpression">ProjectionEqualityExpression</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="nttyzhj4">
+        <emu-nt id="_ref_228"><a href="#prod-ProjectionRelationalExpression">ProjectionRelationalExpression</a></emu-nt>
+    </emu-rhs>
     <emu-rhs a="lackn1tw">
         <emu-nt id="_ref_229"><a href="#prod-ProjectionEqualityExpression">ProjectionEqualityExpression</a></emu-nt>
         <emu-t>==</emu-t>
@@ -3213,7 +3539,9 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="ProjectionRelationalExpression" id="prod-ProjectionRelationalExpression">
-    <emu-nt><a href="#prod-ProjectionRelationalExpression">ProjectionRelationalExpression</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="flky6l5a"><emu-nt id="_ref_233"><a href="#prod-ProjectionAdditiveExpression">ProjectionAdditiveExpression</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-ProjectionRelationalExpression">ProjectionRelationalExpression</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="flky6l5a">
+        <emu-nt id="_ref_233"><a href="#prod-ProjectionAdditiveExpression">ProjectionAdditiveExpression</a></emu-nt>
+    </emu-rhs>
     <emu-rhs a="7lkhh7co">
         <emu-nt id="_ref_234"><a href="#prod-ProjectionRelationalExpression">ProjectionRelationalExpression</a></emu-nt>
         <emu-t>&lt;</emu-t>
@@ -3236,7 +3564,9 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="ProjectionAdditiveExpression" id="prod-ProjectionAdditiveExpression">
-    <emu-nt><a href="#prod-ProjectionAdditiveExpression">ProjectionAdditiveExpression</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="eked4n7k"><emu-nt id="_ref_242"><a href="#prod-ProjectionMultiplicativeExpression">ProjectionMultiplicativeExpression</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-ProjectionAdditiveExpression">ProjectionAdditiveExpression</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="eked4n7k">
+        <emu-nt id="_ref_242"><a href="#prod-ProjectionMultiplicativeExpression">ProjectionMultiplicativeExpression</a></emu-nt>
+    </emu-rhs>
     <emu-rhs a="iiox3k7e">
         <emu-nt id="_ref_243"><a href="#prod-ProjectionAdditiveExpression">ProjectionAdditiveExpression</a></emu-nt>
         <emu-t>+</emu-t>
@@ -3249,7 +3579,9 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="ProjectionMultiplicativeExpression" id="prod-ProjectionMultiplicativeExpression">
-    <emu-nt><a href="#prod-ProjectionMultiplicativeExpression">ProjectionMultiplicativeExpression</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="eosbpz0i"><emu-nt id="_ref_247"><a href="#prod-ProjectionUnaryExpression">ProjectionUnaryExpression</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-ProjectionMultiplicativeExpression">ProjectionMultiplicativeExpression</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="eosbpz0i">
+        <emu-nt id="_ref_247"><a href="#prod-ProjectionUnaryExpression">ProjectionUnaryExpression</a></emu-nt>
+    </emu-rhs>
     <emu-rhs a="oklvxhw2">
         <emu-nt id="_ref_248"><a href="#prod-ProjectionMultiplicativeExpression">ProjectionMultiplicativeExpression</a></emu-nt>
         <emu-t>*</emu-t>
@@ -3262,14 +3594,18 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="ProjectionUnaryExpression" id="prod-ProjectionUnaryExpression">
-    <emu-nt><a href="#prod-ProjectionUnaryExpression">ProjectionUnaryExpression</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="y0pnlb1i"><emu-nt id="_ref_252"><a href="#prod-ProjectionCallExpression">ProjectionCallExpression</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-ProjectionUnaryExpression">ProjectionUnaryExpression</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="y0pnlb1i">
+        <emu-nt id="_ref_252"><a href="#prod-ProjectionCallExpression">ProjectionCallExpression</a></emu-nt>
+    </emu-rhs>
     <emu-rhs a="xbyln6wd">
         <emu-t>!</emu-t>
         <emu-nt id="_ref_253"><a href="#prod-ProjectionUnaryExpression">ProjectionUnaryExpression</a></emu-nt>
     </emu-rhs>
 </emu-production>
 <emu-production name="ProjectionCallExpression" id="prod-ProjectionCallExpression">
-    <emu-nt><a href="#prod-ProjectionCallExpression">ProjectionCallExpression</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="bovlf96p"><emu-nt id="_ref_254"><a href="#prod-ProjectionDecoratorReferenceExpression">ProjectionDecoratorReferenceExpression</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-ProjectionCallExpression">ProjectionCallExpression</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="bovlf96p">
+        <emu-nt id="_ref_254"><a href="#prod-ProjectionDecoratorReferenceExpression">ProjectionDecoratorReferenceExpression</a></emu-nt>
+    </emu-rhs>
     <emu-rhs a="dskpubvk">
         <emu-nt id="_ref_255"><a href="#prod-ProjectionCallExpression">ProjectionCallExpression</a></emu-nt>
         <emu-nt id="_ref_256"><a href="#prod-ProjectionCallArguments">ProjectionCallArguments</a></emu-nt>
@@ -3293,14 +3629,18 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="ProjectionDecoratorReferenceExpression" id="prod-ProjectionDecoratorReferenceExpression">
-    <emu-nt><a href="#prod-ProjectionDecoratorReferenceExpression">ProjectionDecoratorReferenceExpression</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="upl3vrmk"><emu-nt id="_ref_262"><a href="#prod-ProjectionMemberExpression">ProjectionMemberExpression</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-ProjectionDecoratorReferenceExpression">ProjectionDecoratorReferenceExpression</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="upl3vrmk">
+        <emu-nt id="_ref_262"><a href="#prod-ProjectionMemberExpression">ProjectionMemberExpression</a></emu-nt>
+    </emu-rhs>
     <emu-rhs a="ifcyd-aq">
         <emu-t>@</emu-t>
         <emu-nt id="_ref_263"><a href="#prod-IdentifierOrMemberExpression">IdentifierOrMemberExpression</a></emu-nt>
     </emu-rhs>
 </emu-production>
 <emu-production name="ProjectionMemberExpression" id="prod-ProjectionMemberExpression">
-    <emu-nt><a href="#prod-ProjectionMemberExpression">ProjectionMemberExpression</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="0yuqksdg"><emu-nt id="_ref_264"><a href="#prod-ProjectionPrimaryExpression">ProjectionPrimaryExpression</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-ProjectionMemberExpression">ProjectionMemberExpression</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="0yuqksdg">
+        <emu-nt id="_ref_264"><a href="#prod-ProjectionPrimaryExpression">ProjectionPrimaryExpression</a></emu-nt>
+    </emu-rhs>
     <emu-rhs a="jew6aiq_">
         <emu-nt id="_ref_265"><a href="#prod-ProjectionMemberExpression">ProjectionMemberExpression</a></emu-nt>
         <emu-t>.</emu-t>
@@ -3313,14 +3653,30 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="ProjectionPrimaryExpression" id="prod-ProjectionPrimaryExpression">
-    <emu-nt><a href="#prod-ProjectionPrimaryExpression">ProjectionPrimaryExpression</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="gb-biqvs"><emu-t>self</emu-t></emu-rhs>
-    <emu-rhs a="bras6mo_"><emu-nt id="_ref_269"><a href="#prod-Identifier">Identifier</a></emu-nt></emu-rhs>
-    <emu-rhs a="cjpglqhg"><emu-nt id="_ref_270"><a href="#prod-ProjectionIfExpression">ProjectionIfExpression</a></emu-nt></emu-rhs>
-    <emu-rhs a="kwuqjwk9"><emu-nt id="_ref_271"><a href="#prod-ProjectionLambdaExpression">ProjectionLambdaExpression</a></emu-nt></emu-rhs>
-    <emu-rhs a="kul-a19e"><emu-nt id="_ref_272"><a href="#prod-Literal">Literal</a></emu-nt></emu-rhs>
-    <emu-rhs a="pmeanrkf"><emu-nt id="_ref_273"><a href="#prod-ProjectionModelExpression">ProjectionModelExpression</a></emu-nt></emu-rhs>
-    <emu-rhs a="0ehfrlsm"><emu-nt id="_ref_274"><a href="#prod-ProjectionTupleExpression">ProjectionTupleExpression</a></emu-nt></emu-rhs>
-    <emu-rhs a="ult0-wp7"><emu-nt id="_ref_275"><a href="#prod-CoverProjectionParenthesizedExpressionAndLambdaParameterList">CoverProjectionParenthesizedExpressionAndLambdaParameterList</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-ProjectionPrimaryExpression">ProjectionPrimaryExpression</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="gb-biqvs">
+        <emu-t>self</emu-t>
+    </emu-rhs>
+    <emu-rhs a="bras6mo_">
+        <emu-nt id="_ref_269"><a href="#prod-Identifier">Identifier</a></emu-nt>
+    </emu-rhs>
+    <emu-rhs a="cjpglqhg">
+        <emu-nt id="_ref_270"><a href="#prod-ProjectionIfExpression">ProjectionIfExpression</a></emu-nt>
+    </emu-rhs>
+    <emu-rhs a="kwuqjwk9">
+        <emu-nt id="_ref_271"><a href="#prod-ProjectionLambdaExpression">ProjectionLambdaExpression</a></emu-nt>
+    </emu-rhs>
+    <emu-rhs a="kul-a19e">
+        <emu-nt id="_ref_272"><a href="#prod-Literal">Literal</a></emu-nt>
+    </emu-rhs>
+    <emu-rhs a="pmeanrkf">
+        <emu-nt id="_ref_273"><a href="#prod-ProjectionModelExpression">ProjectionModelExpression</a></emu-nt>
+    </emu-rhs>
+    <emu-rhs a="0ehfrlsm">
+        <emu-nt id="_ref_274"><a href="#prod-ProjectionTupleExpression">ProjectionTupleExpression</a></emu-nt>
+    </emu-rhs>
+    <emu-rhs a="ult0-wp7">
+        <emu-nt id="_ref_275"><a href="#prod-CoverProjectionParenthesizedExpressionAndLambdaParameterList">CoverProjectionParenthesizedExpressionAndLambdaParameterList</a></emu-nt>
+    </emu-rhs>
 </emu-production>
 <emu-production name="CoverProjectionParenthesizedExpressionAndLambdaParameterList" id="prod-CoverProjectionParenthesizedExpressionAndLambdaParameterList">
     <emu-nt><a href="#prod-CoverProjectionParenthesizedExpressionAndLambdaParameterList">CoverProjectionParenthesizedExpressionAndLambdaParameterList</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="b22wugnz">
@@ -3330,7 +3686,9 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="ProjectionExpressionList" id="prod-ProjectionExpressionList">
-    <emu-nt><a href="#prod-ProjectionExpressionList">ProjectionExpressionList</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="emksbnr7"><emu-nt id="_ref_277"><a href="#prod-ProjectionExpression">ProjectionExpression</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-ProjectionExpressionList">ProjectionExpressionList</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="emksbnr7">
+        <emu-nt id="_ref_277"><a href="#prod-ProjectionExpression">ProjectionExpression</a></emu-nt>
+    </emu-rhs>
     <emu-rhs a="if8za0tg">
         <emu-nt id="_ref_278"><a href="#prod-ProjectionExpressionList">ProjectionExpressionList</a></emu-nt>
         <emu-t>,</emu-t>
@@ -3376,7 +3734,9 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="ProjectionModelPropertyList" id="prod-ProjectionModelPropertyList">
-    <emu-nt><a href="#prod-ProjectionModelPropertyList">ProjectionModelPropertyList</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="qnv19o8r"><emu-nt id="_ref_288"><a href="#prod-ProjectionModelProperty">ProjectionModelProperty</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-ProjectionModelPropertyList">ProjectionModelPropertyList</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="qnv19o8r">
+        <emu-nt id="_ref_288"><a href="#prod-ProjectionModelProperty">ProjectionModelProperty</a></emu-nt>
+    </emu-rhs>
     <emu-rhs a="k06km7_w">
         <emu-nt id="_ref_289"><a href="#prod-ProjectionModelPropertyList">ProjectionModelPropertyList</a></emu-nt>
         <emu-t>,</emu-t>
@@ -3389,7 +3749,9 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="ProjectionModelProperty" id="prod-ProjectionModelProperty">
-    <emu-nt><a href="#prod-ProjectionModelProperty">ProjectionModelProperty</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="noc7fhyz"><emu-nt id="_ref_293"><a href="#prod-ProjectionModelSpreadProperty">ProjectionModelSpreadProperty</a></emu-nt></emu-rhs>
+    <emu-nt><a href="#prod-ProjectionModelProperty">ProjectionModelProperty</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="noc7fhyz">
+        <emu-nt id="_ref_293"><a href="#prod-ProjectionModelSpreadProperty">ProjectionModelSpreadProperty</a></emu-nt>
+    </emu-rhs>
     <emu-rhs a="6zpn0h3k">
         <emu-nt optional="" id="_ref_294"><a href="#prod-DecoratorList">DecoratorList</a><emu-mods><emu-opt>opt</emu-opt></emu-mods></emu-nt>
         <emu-nt id="_ref_295"><a href="#prod-Identifier">Identifier</a></emu-nt>
@@ -3412,9 +3774,9 @@ li.menu-search-result-term:before {
     </emu-rhs>
 </emu-production>
 <emu-production name="ProjectionTupleExpression" id="prod-ProjectionTupleExpression">
-    <emu-nt><a href="#prod-ProjectionTupleExpression">ProjectionTupleExpression</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="gzasqabt">
+    <emu-nt><a href="#prod-ProjectionTupleExpression">ProjectionTupleExpression</a></emu-nt> <emu-geq>:</emu-geq> <emu-rhs a="zhtv_ku5">
         <emu-t>[</emu-t>
-        <emu-nt id="_ref_301"><a href="#prod-ProjectionExpressionList">ProjectionExpressionList</a></emu-nt>
+        <emu-nt optional="" id="_ref_301"><a href="#prod-ProjectionExpressionList">ProjectionExpressionList</a><emu-mods><emu-opt>opt</emu-opt></emu-mods></emu-nt>
         <emu-t>]</emu-t>
     </emu-rhs>
 </emu-production>

@@ -1,6 +1,23 @@
 # Change Log - @cadl-lang/openapi3
 
-This log was last generated on Thu, 31 Mar 2022 17:10:49 GMT and should not be manually modified.
+This log was last generated on Fri, 06 May 2022 17:19:57 GMT and should not be manually modified.
+
+## 0.11.0
+Fri, 06 May 2022 17:19:57 GMT
+
+### Minor changes
+
+- Uptake change in compiler with children references
+- Move decorators to `OpenAPI` namespace
+- Uptake change to versioning library
+- Remove node 14 support
+
+### Patches
+
+- Fix issue not excluding template models from derived models causing crash
+- Fix duplicate `description` in parameters
+- Rearrange some aspects of operation output in the OpenAPI emitter
+- URI-encode refs
 
 ## 0.10.0
 Thu, 31 Mar 2022 17:10:49 GMT

@@ -22,10 +22,10 @@ describe("rest: resources", () => {
           subthingId: string;
         }
 
-        model Error {}
+        @error model Error {}
 
-        interface Things mixes ResourceOperations<Thing, Error> {}
-        interface Subthings mixes ResourceOperations<Subthing, Error> {}
+        interface Things extends ResourceOperations<Thing, Error> {}
+        interface Subthings extends ResourceOperations<Subthing, Error> {}
       }
       `
     );
@@ -140,10 +140,10 @@ describe("rest: resources", () => {
           data: string;
         }
 
-        model Error {}
+        @error model Error {}
 
-        interface Things mixes ResourceRead<Thing, Error> {}
-        interface ThingsSingleton mixes SingletonResourceOperations<Singleton, Thing, Error> {}
+        interface Things extends ResourceRead<Thing, Error> {}
+        interface ThingsSingleton extends SingletonResourceOperations<Singleton, Thing, Error> {}
       }
       `
     );
@@ -192,10 +192,10 @@ describe("rest: resources", () => {
           exthingId: string;
         }
 
-        model Error {}
+        @error model Error {}
 
-        interface ThingsExtension mixes ExtensionResourceOperations<Exthing, Thing, Error> {}
-        interface SubthingsExtension mixes ExtensionResourceOperations<Exthing, Subthing, Error> {}
+        interface ThingsExtension extends ExtensionResourceOperations<Exthing, Thing, Error> {}
+        interface SubthingsExtension extends ExtensionResourceOperations<Exthing, Subthing, Error> {}
       }
       `
     );
@@ -260,15 +260,37 @@ describe("rest: resources", () => {
       `
       using Cadl.Rest.Resource;
 
-      interface Dogs mixes ResourceOperations<Dog, {}> {}
+      interface Dogs extends ResourceOperations<Dog, Error> {}
 
       model Dog {}
+      @error model Error {code: string}
       `
     );
     expectDiagnostics(diagnostics, {
       code: "@cadl-lang/rest/resource-missing-key",
       message:
         "Type 'Dog' is used as a resource and therefore must have a key. Use @key to designate a property as the key.",
+    });
+  });
+
+  it("emit diagnostic if missing @error decorator on error", async () => {
+    const runner = await createRestTestRunner();
+    const diagnostics = await runner.diagnose(
+      `
+      using Cadl.Rest.Resource;
+
+      interface Dogs extends ResourceOperations<Dog, Error> {}
+      
+      model Dog {
+        @key foo: string
+      }
+      model Error {code: string}
+      `
+    );
+    expectDiagnostics(diagnostics, {
+      code: "@cadl-lang/rest/resource-missing-error",
+      message:
+        "Type 'Error' is used as an error and therefore must have the @error decorator applied.",
     });
   });
 });

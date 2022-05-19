@@ -20,6 +20,7 @@ export type CadlScope =
   | "keyword.directive.name.cadl"
   | "entity.name.type.cadl"
   | "entity.name.function.cadl"
+  | "entity.name.tag.cadl"
   | "keyword.other.cadl"
   | "string.quoted.double.cadl"
   | "string.quoted.triple.cadl"
@@ -189,9 +190,9 @@ const parenthesizedExpression: BeginEndRule = {
 const decorator: BeginEndRule = {
   key: "decorator",
   scope: meta,
-  begin: `@(${qualifiedIdentifier})`,
+  begin: `(@${qualifiedIdentifier})`,
   beginCaptures: {
-    "1": { scope: "entity.name.function.cadl" },
+    "1": { scope: "entity.name.tag.cadl" },
   },
   end: `${beforeIdentifier}|${universalEnd}`,
   patterns: [token, parenthesizedExpression],
@@ -446,7 +447,7 @@ const interfaceMember: BeginEndRule = {
 const interfaceHeritage: BeginEndRule = {
   key: "interface-heritage",
   scope: meta,
-  begin: "\\b(mixes)\\b",
+  begin: "\\b(extends)\\b",
   beginCaptures: {
     "1": { scope: "keyword.other.cadl" },
   },
@@ -478,7 +479,7 @@ const interfaceStatement: BeginEndRule = {
   end: `(?<=\\})|${universalEnd}`,
   patterns: [
     token,
-    interfaceHeritage, // before expression or mixes will look like type name
+    interfaceHeritage, // before expression or extends will look like type name
     interfaceBody, // before expression or { will match model expression
     expression, // enough to match name and type parameters
   ],

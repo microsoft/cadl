@@ -14,7 +14,9 @@ import { compile, Program } from "../core/program.js";
 import { initCadlProject } from "../init/index.js";
 import { compilerAssert, logDiagnostics } from "./diagnostics.js";
 import { findUnformattedCadlFiles, formatCadlFiles } from "./formatter.js";
+import { CompilerHost } from "./index.js";
 import { installCadlDependencies } from "./install.js";
+import { createConsoleSink } from "./logger/index.js";
 import { NodeHost } from "./node-host.js";
 import { getAnyExtensionFromPath, getBaseFileName, joinPaths, resolvePath } from "./path-utils.js";
 import { Diagnostic } from "./types.js";
@@ -29,11 +31,18 @@ async function main() {
     .strict()
     .parserConfiguration({
       "greedy-arrays": false,
+      "boolean-negation": false,
     })
     .option("debug", {
       type: "boolean",
       description: "Output debug log messages.",
       default: false,
+    })
+    .option("pretty", {
+      type: "boolean",
+      description:
+        "Enable color and formatting in Cadl's output to make compiler errors easier to read.",
+      default: true,
     })
     .command(
       "compile <path>",
@@ -83,16 +92,27 @@ async function main() {
             default: "info",
             choices: ["error", "warn", "info", "verbose", "debug"],
             describe: "Diagnostics of this level or above will be reported.",
+          })
+          .option("warn-as-error", {
+            type: "boolean",
+            default: false,
+            describe: "Treat warnings as errors and return non-zero exit code if there are any.",
+          })
+          .option("no-emit", {
+            type: "boolean",
+            default: false,
+            describe: "Run emitters but do not emit any output.",
           });
       },
       async (args) => {
-        const cliOptions = await getCompilerOptions(args);
+        const host = createCLICompilerHost(args);
+        const cliOptions = await getCompilerOptions(host, args);
 
-        const program = await compileInput(args.path, cliOptions);
+        const program = await compileInput(host, args.path, cliOptions);
         if (program.hasError()) {
           process.exit(1);
         }
-        if (program.emitters.length === 0) {
+        if (program.emitters.length === 0 && !program.compilerOptions.noEmit) {
           console.log(
             "No emitter was configured, no output was generated. Use `--emit <emitterName>` to pick emitter or specify it in the cadl config."
           );
@@ -147,6 +167,12 @@ async function main() {
             array: true,
             demandOption: true,
           })
+          .option("exclude", {
+            alias: "x",
+            type: "string",
+            array: true,
+            describe: "Pattern to exclude",
+          })
           .option("check", {
             alias: "c",
             type: "boolean",
@@ -156,6 +182,7 @@ async function main() {
       async (args) => {
         if (args["check"]) {
           const unformatted = await findUnformattedCadlFiles(args["include"], {
+            exclude: args["exclude"],
             debug: args.debug,
           });
           if (unformatted.length > 0) {
@@ -166,7 +193,7 @@ async function main() {
             process.exit(1);
           }
         } else {
-          await formatCadlFiles(args["include"], { debug: args.debug });
+          await formatCadlFiles(args["include"], { exclude: args["exclude"], debug: args.debug });
         }
       }
     )
@@ -178,7 +205,7 @@ async function main() {
           description: "Url of the initialization template",
           type: "string",
         }),
-      (args) => initCadlProject(NodeHost, process.cwd(), args.templatesUrl)
+      (args) => initCadlProject(createCLICompilerHost(args), process.cwd(), args.templatesUrl)
     )
     .command(
       "install",
@@ -190,20 +217,20 @@ async function main() {
       "info",
       "Show information about current Cadl compiler.",
       () => {},
-      () => printInfo()
+      (args) => printInfo(createCLICompilerHost(args))
     )
     .version(cadlVersion)
     .demandCommand(1, "You must use one of the supported commands.").argv;
 }
 
 function compileInput(
+  host: CompilerHost,
   path: string,
   compilerOptions: CompilerOptions,
   printSuccess = true
 ): Promise<Program> {
   let compileRequested: boolean = false;
   let currentCompilePromise: Promise<Program> | undefined = undefined;
-
   const log = (message?: any, ...optionalParams: any[]) => {
     const prefix = compilerOptions.watchForChanges ? `[${new Date().toLocaleTimeString()}] ` : "";
     console.log(`${prefix}${message}`, ...optionalParams);
@@ -217,7 +244,7 @@ function compileInput(
         console.clear();
       }
 
-      currentCompilePromise = compile(resolve(path), NodeHost, compilerOptions)
+      currentCompilePromise = compile(resolve(path), host, compilerOptions)
         .then(onCompileFinished)
         .catch(internalCompilerError);
     } else {
@@ -232,7 +259,7 @@ function compileInput(
   const onCompileFinished = (program: Program) => {
     if (program.diagnostics.length > 0) {
       log("Diagnostics were reported during compilation:\n");
-      logDiagnostics(program.diagnostics, NodeHost.logSink);
+      logDiagnostics(program.diagnostics, host.logSink);
       logDiagnosticCount(program.diagnostics);
     } else {
       if (printSuccess) {
@@ -290,17 +317,30 @@ function logDiagnosticCount(diagnostics: readonly Diagnostic[]) {
   console.log(`\nFound ${[errorText, warningText].filter((x) => x !== undefined).join(", ")}.`);
 }
 
-async function getCompilerOptions(args: {
+function createCLICompilerHost(args: { pretty?: boolean }): CompilerHost {
+  return { ...NodeHost, logSink: createConsoleSink({ pretty: args.pretty }) };
+}
+
+interface CompileCliArgs {
   "output-path": string;
   nostdlib?: boolean;
   option?: string[];
   import?: string[];
   watch?: boolean;
   emit?: string[];
+  debug?: boolean;
   "diagnostic-level": string;
-}): Promise<CompilerOptions> {
-  // Ensure output path
-  const outputPath = resolvePath(args["output-path"]);
+  "warn-as-error"?: boolean;
+  "no-emit"?: boolean;
+}
+
+async function getCompilerOptions(
+  host: CompilerHost,
+  args: CompileCliArgs
+): Promise<CompilerOptions> {
+  // Workaround for https://github.com/npm/cli/issues/3680
+  const pathArg = args["output-path"].replace(/\\\\/g, "\\");
+  const outputPath = resolvePath(process.cwd(), pathArg);
   await mkdirp(outputPath);
 
   const miscOptions: any = {};
@@ -314,10 +354,10 @@ async function getCompilerOptions(args: {
     miscOptions[optionParts[0]] = optionParts[1];
   }
 
-  const config = await loadCadlConfigForPath(NodeHost, process.cwd());
+  const config = await loadCadlConfigForPath(host, process.cwd());
 
   if (config.diagnostics.length > 0) {
-    logDiagnostics(config.diagnostics, NodeHost.logSink);
+    logDiagnostics(config.diagnostics, host.logSink);
     logDiagnosticCount(config.diagnostics);
     if (config.diagnostics.some((d) => d.severity === "error")) {
       process.exit(1);
@@ -331,7 +371,9 @@ async function getCompilerOptions(args: {
     nostdlib: args["nostdlib"],
     additionalImports: args["import"],
     watchForChanges: args["watch"],
-    diagnosticLevel: args["diagnostic-level"] as any,
+    diagnosticLevel: args.debug ? "debug" : (args["diagnostic-level"] as any),
+    warningAsError: args["warn-as-error"],
+    noEmit: args["no-emit"],
     emitters: args.emit ?? (config.emitters ? Object.keys(config.emitters) : []),
   };
 }
@@ -546,11 +588,11 @@ async function uninstallVSExtension() {
 /**
  * Print the resolved Cadl configuration.
  */
-async function printInfo() {
+async function printInfo(host: CompilerHost) {
   const cwd = process.cwd();
   console.log(`Module: ${url.fileURLToPath(import.meta.url)}`);
 
-  const config = await loadCadlConfigForPath(NodeHost, cwd);
+  const config = await loadCadlConfigForPath(host, cwd);
   const jsyaml = await import("js-yaml");
   const excluded = ["diagnostics", "filename"];
   const replacer = (key: string, value: any) => (excluded.includes(key) ? undefined : value);
@@ -559,7 +601,7 @@ async function printInfo() {
   console.log("-----------");
   console.log(jsyaml.dump(config, { replacer }));
   console.log("-----------");
-  logDiagnostics(config.diagnostics, NodeHost.logSink);
+  logDiagnostics(config.diagnostics, host.logSink);
   logDiagnosticCount(config.diagnostics);
   if (config.diagnostics.some((d) => d.severity === "error")) {
     process.exit(1);

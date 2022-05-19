@@ -1,6 +1,6 @@
 import { stat } from "fs/promises";
 import { join } from "path";
-import { ExtensionContext, workspace } from "vscode";
+import { commands, ExtensionContext, workspace } from "vscode";
 import {
   Executable,
   ExecutableOptions,
@@ -26,10 +26,19 @@ export async function activate(context: ExtensionContext) {
     ],
   };
 
+  context.subscriptions.push(commands.registerCommand("cadl.restartServer", restartCadlServer));
+
   const name = "Cadl";
   const id = "cadlLanguageServer";
   client = new LanguageClient(id, name, { run: exe, debug: exe }, options);
   client.start();
+}
+
+async function restartCadlServer(): Promise<void> {
+  if (client) {
+    await client.stop();
+    client.start();
+  }
 }
 
 async function resolveCadlServer(context: ExtensionContext): Promise<Executable> {

@@ -51,6 +51,12 @@ const libDefinition = {
         default: paramMessage`Type '${"modelName"}' is used as a resource and therefore must have a key. Use @key to designate a property as the key.`,
       },
     },
+    "resource-missing-error": {
+      severity: "error",
+      messages: {
+        default: paramMessage`Type '${"modelName"}' is used as an error and therefore must have the @error decorator applied.`,
+      },
+    },
     "duplicate-key": {
       severity: "error",
       messages: {

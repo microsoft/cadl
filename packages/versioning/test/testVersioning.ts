@@ -11,6 +11,12 @@ import {
 import { BasicTestRunner, createTestWrapper } from "@cadl-lang/compiler/testing";
 import { ok, strictEqual } from "assert";
 import { createVersioningTestHost } from "./test-host.js";
+import {
+  assertHasMembers,
+  assertHasOperations,
+  assertHasProperties,
+  assertHasVariants,
+} from "./utils.js";
 
 describe("cadl: versioning", () => {
   let runner: BasicTestRunner;
@@ -177,6 +183,35 @@ describe("cadl: versioning", () => {
       ok(v1.properties.get("b")!.optional === false);
       ok(v2.properties.get("a")!.optional === false);
       ok(v2.properties.get("b")!.optional === true);
+    });
+
+    it("can spread versioned model", async () => {
+      const {
+        source,
+        projections: [v1, v2],
+      } = await versionedModel(
+        ["1", "2"],
+        `model Test {
+          t: string;
+          ...Spreadable
+        }
+        model Spreadable {
+          a: int32;
+          @added("2") b: int32;
+        }
+        `
+      );
+
+      assertHasProperties(v1, ["t", "a"]);
+      assertHasProperties(v2, ["t", "a", "b"]);
+
+      assertModelProjectsTo(
+        [
+          [v1, "1"],
+          [v2, "2"],
+        ],
+        source
+      );
     });
 
     async function versionedModel(versions: string[], model: string) {
@@ -472,6 +507,20 @@ describe("cadl: versioning", () => {
       );
     });
 
+    it("can version parameters", async () => {
+      const {
+        projections: [v1, v2],
+      } = await versionedInterface(
+        ["1", "2"],
+        `interface Test { 
+          op foo(@added("2") a: string): void;
+        }`
+      );
+
+      assertHasProperties(v1.operations.get("foo")!.parameters, []);
+      assertHasProperties(v2.operations.get("foo")!.parameters, ["a"]);
+    });
+
     async function versionedInterface(versions: string[], iface: string) {
       const { Test } = (await runner.compile(`
         @versioned(${versions.map((t) => JSON.stringify(t)).join(" | ")})
@@ -605,43 +654,6 @@ describe("cadl: versioning", () => {
     }
   });
 
-  function assertHasProperties(model: ModelType, props: string[]) {
-    strictEqual(model.properties.size, props.length, `Model ${model.name} property count`);
-    for (const propName of props) {
-      ok(model.properties.has(propName), `Model ${model.name} should have property ${propName}`);
-    }
-  }
-
-  function assertHasVariants(union: UnionType, variants: string[]) {
-    strictEqual(union.variants.size, variants.length, `Union ${union.name} variant count`);
-    for (const variantName of variants) {
-      ok(union.variants.has(variantName), `Union ${union.name} should have variant ${variantName}`);
-    }
-  }
-  function assertHasOperations(iface: InterfaceType, operations: string[]) {
-    strictEqual(
-      iface.operations.size,
-      operations.length,
-      `Interface ${iface.name} operation count`
-    );
-    for (const operationName of operations) {
-      ok(
-        iface.operations.has(operationName),
-        `Interface ${iface.name} should have operation ${operationName}`
-      );
-    }
-  }
-
-  function assertHasMembers(enumType: EnumType, members: string[]) {
-    strictEqual(enumType.members.length, members.length, `Enum ${enumType.name} member count`);
-    for (const member of members) {
-      ok(
-        enumType.members.findIndex((m) => m.name === member) > -1,
-        `Enum ${enumType.name} should have member ${member}`
-      );
-    }
-  }
-
   function assertModelProjectsTo(types: [ModelType, string][], target: ModelType) {
     types.forEach(([m, version]) => {
       const projection = project(m, version, "from");
@@ -684,8 +696,9 @@ describe("cadl: versioning", () => {
   }
 
   function project<T extends Type>(target: T, version: string, direction: "to" | "from" = "to"): T {
+    const versionMap = new Map();
     const projection: ProjectionApplication = {
-      arguments: [version],
+      arguments: [version, versionMap as any],
       projectionName: "v",
       direction,
     };

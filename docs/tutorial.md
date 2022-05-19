@@ -194,6 +194,8 @@ alias DogPage = Page<Dog>;
 
 Unlike `model`, `alias` does not create a new entity, and as such will not change generated code in any way. An alias merely describes a source code shorthand to avoid repeating the right-hand side in multiple places.
 
+Because alias does not create a new entity, you cannot specify decorators on an alias.
+
 ### Type Literals
 
 API authors often need to describe API shapes in terms of specific literal values. For example, this operation returns this specific integer status code, or this model member can be one of a few specific string values. It is also often useful to pass specific literal values to decorators. Cadl supports string, number, and boolean literal values to support these cases:
@@ -386,10 +388,10 @@ interface B {
 
 ```
 
-And the keyword `mixes` can be used to compose operations from other interfaces into a new interface:
+And the keyword `extends` can be used to compose operations from other interfaces into a new interface:
 
 ```cadl
-interface C mixes A, B {
+interface C extends A, B {
   c(): string;
 }
 
@@ -470,12 +472,124 @@ Dog type: Model
 
 Cadl comes built-in with a number of decorators that are useful for defining service APIs regardless of what protocol or language you're targeting.
 
+- @summary - attach a documentation string, typically a short, single-line description.
 - @doc - attach a documentation string. Works great with multi-line string literals.
+- @key - mark a model property as the key to identify instances of that type
 - @tag - attach a simple tag to a declaration
 - @secret - mark a string as a secret value that should be treated carefully to avoid exposure
 - @minValue/@maxValue - set the min and max values of number types
 - @minLength/@maxLength - set the min and max lengths for strings
+- @knownValues - mark a string type with an enum that contains all known values
 - @pattern - set the pattern for a string using regular expression syntax
+- @format - specify the data format hint for a string type
+- @error - specify a model is representing an error
+
+##### @summary
+
+Syntax:
+
+```
+@summary(text [, object])
+```
+
+`@summary` attaches a documentation string. It is typically used to give a short, single-line
+description, and can be used in combination with or instead of `@doc`.
+
+The first argument to `@summary` is a string, which may contain template parameters, enclosed in braces,
+which are replaced with an attribute for the type (commonly "name") passed as the second (optional) argument.
+
+`@summary` can be specified on any language element -- a model, an operation, a namespace, etc.
+
+##### @doc
+
+Syntax:
+
+```
+@doc(text [, object])
+```
+
+`@doc` attaches a documentation string. Works great with multi-line string literals.
+
+The first argument to `@doc` is a string, which may contain template parameters, enclosed in braces,
+which are replaced with an attribute for the type (commonly "name") passed as the second (optional) argument.
+
+`@doc` can be specified on any language element -- a model, an operation, a namespace, etc.
+
+##### @knownValues
+
+Syntax:
+
+```
+@knownValues(enumTypeReference)
+```
+
+`@knownValues` marks a string type with an enum that contains all known values
+
+The first parameter is a reference to an enum type that enumerates all possible values that the
+type accepts.
+
+`@knownValues` can only be applied to model types that extend `string`.
+
+Example:
+
+```
+enum OperationStateValues {
+  Running,
+  Completed,
+  Failed
+}
+
+@knownValues(OperationStateValues)
+model OperationState extends string {
+}
+```
+
+##### @key
+
+Syntax:
+
+```
+@key([keyName])
+```
+
+`@key` - mark a model property as the key to identify instances of that type
+
+The optional first argument accepts an alternate key name which may be used by emitters.
+Otherwise, the name of the target property will be used.
+
+`@key` can only be applied to model properties.
+
+##### @format
+
+Syntax:
+
+```
+@format(formatName)
+```
+
+`@format` - specify the data format hint for a string type
+
+The first argument is a string that identifies the format that the string type expects. Any string
+can be entered here, but a Cadl emitter must know how to interpret
+
+For Cadl specs that will be used with an OpenAPI emitter, the OpenAPI specification describes possible
+valid values for a string type's format:
+
+https://swagger.io/specification/#data-types
+
+`@format` can be applied to a type that extends from `string` or a `string`-typed model property.
+
+##### @error
+
+Syntax:
+
+```
+@error
+```
+
+`@format` - specify that this model is an error type
+
+For HTTP API this can be used to represent a failure.
 
 ##### Visibility decorators
 
@@ -608,6 +722,46 @@ namespace Pets {
   @get op listPets(): Pet[];
 }
 
+```
+
+##### Automatic route generation
+
+Instead of manually specifying routes using the `@route` decorator, you automatically generate
+routes from operation parameters by applying the `@autoRoute` decorator to an operation or a namespace
+or interface containing operations.
+
+For this to work, an operation's path parameters (those marked with `@path`) must also be marked with
+the `@segment` decorator to specify what the preceding path segment should be.
+
+This is especially useful when reusing common parameter sets defined as model types.
+
+For example:
+
+```
+model CommonParameters {
+  @path
+  @segment("tenants")
+  tenantId: string;
+
+  @path
+  @segment("users")
+  userName: string;
+}
+
+@autoRoute
+interface UserOperations {
+  @get
+  getUser(...CommonParameters): User | Error;
+
+  @put
+  updateUser(...CommonParameters, user: User): User | Error;
+}
+```
+
+This will result in the following route for both operations
+
+```
+/tenants/{tenantId}/users/{userName}
 ```
 
 #### Path and query parameters

@@ -1,5 +1,5 @@
 import { readFile, writeFile } from "fs/promises";
-import glob from "glob";
+import { globby } from "globby";
 import prettier from "prettier";
 import * as cadlPrettierPlugin from "../formatter/index.js";
 import { PrettierParserError } from "../formatter/parser.js";
@@ -29,12 +29,17 @@ export async function checkFormatCadl(
   });
 }
 
+export interface CadlFormatOptions {
+  exclude?: string[];
+  debug?: boolean;
+}
+
 /**
  * Format all the Cadl files.
  * @param patterns List of wildcard pattern searching for Cadl files.
  */
-export async function formatCadlFiles(patterns: string[], { debug }: { debug?: boolean }) {
-  const files = await findFiles(patterns);
+export async function formatCadlFiles(patterns: string[], { exclude, debug }: CadlFormatOptions) {
+  const files = await findFiles(patterns, exclude);
   for (const file of files) {
     try {
       await formatCadlFile(file);
@@ -56,9 +61,9 @@ export async function formatCadlFiles(patterns: string[], { debug }: { debug?: b
  */
 export async function findUnformattedCadlFiles(
   patterns: string[],
-  { debug }: { debug?: boolean }
+  { exclude, debug }: CadlFormatOptions
 ): Promise<string[]> {
-  const files = await findFiles(patterns);
+  const files = await findFiles(patterns, exclude);
   const unformatted = [];
   for (const file of files) {
     try {
@@ -80,9 +85,9 @@ export async function findUnformattedCadlFiles(
 }
 
 export async function formatCadlFile(filename: string) {
-  const content = await readFile(filename);
+  const content = await readFile(filename, "utf-8");
   const prettierConfig = await prettier.resolveConfig(filename);
-  const formattedContent = await formatCadl(content.toString(), prettierConfig ?? {});
+  const formattedContent = await formatCadl(content, prettierConfig ?? {});
   await writeFile(filename, formattedContent);
 }
 
@@ -91,23 +96,12 @@ export async function formatCadlFile(filename: string) {
  * @returns true if code is formatted correctly.
  */
 export async function checkFormatCadlFile(filename: string): Promise<boolean> {
-  const content = await readFile(filename);
+  const content = await readFile(filename, "utf-8");
   const prettierConfig = await prettier.resolveConfig(filename);
-  return await checkFormatCadl(content.toString(), prettierConfig ?? {});
+  return await checkFormatCadl(content, prettierConfig ?? {});
 }
 
-async function findFilesFromPattern(pattern: string): Promise<string[]> {
-  return new Promise((resolve, reject) => {
-    glob(pattern, (err, matches) => {
-      if (err) {
-        reject(err);
-      }
-      resolve(matches);
-    });
-  });
-}
-
-async function findFiles(include: string[]): Promise<string[]> {
-  const result = await Promise.all(include.map((path) => findFilesFromPattern(path)));
-  return result.flat();
+async function findFiles(include: string[], ignore: string[] = []): Promise<string[]> {
+  const patterns = [...include, "!**/node_modules", ...ignore.map((x) => `!${x}`)];
+  return globby(patterns);
 }

@@ -7,12 +7,12 @@ Foo {
   y (x: int32, y: int32): int32
 }
 
-interface Bar    mixes
+interface Bar    extends
 ResourceOperations<BarResource> {
   blerp(n: int32): string;
 }
 
-interface Baz mixes ResourceRead<BarResource>,
+interface Baz extends ResourceRead<BarResource>,
 
 ResourceCreate<BarResource>,     ResourceDelete<BarResource>
   {

@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -6,29 +7,7 @@
     <title>Cadl Playground</title>
   </head>
   <body>
-    <div id="grid">
-      <div id="commandBar">
-        <label>
-          <button id="share">Share</button>
-        </label>
-        <label>
-          Load a sample:
-          <select id="samples">
-            <option value="" disabled selected>Select sample...</option>
-          </select>
-        </label>
-        <label>
-          <button id="newIssue">Open Issue</button>
-        </label>
-      </div>
-      <div id="outputTabs"></div>
-      <div id="editorContainer">
-        <div id="editor"></div>
-      </div>
-      <div id="outputContainer">
-        <div id="output"></div>
-      </div>
-    </div>
-    <script type="module" src="/src/main.ts"></script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

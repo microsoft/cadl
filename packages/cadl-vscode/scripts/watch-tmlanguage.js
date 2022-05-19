@@ -1,7 +1,6 @@
+import { runWatch } from "@cadl-lang/internal-build-utils";
 import { createRequire } from "module";
 import { resolve } from "path";
-import watch from "watch";
-import { runWatch } from "../../../eng/scripts/helpers.js";
 
 const require = createRequire(import.meta.url);
 const script = resolve("dist-dev/src/tmlanguage.js");
@@ -15,7 +14,7 @@ async function regenerate() {
   await require(script).main();
 }
 
-runWatch(watch, "dist-dev/src", regenerate, {
+runWatch("dist-dev/src", regenerate, {
   // This filter doesn't do as much as one might hope because tsc writes out all
   // the files on recompilation. So tmlanguage.js changes when other .ts files
   // in cadl-vscode change but tmlanguage.ts has not changed. We could check the

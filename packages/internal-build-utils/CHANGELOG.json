@@ -1,0 +1,28 @@
+{
+  "name": "@cadl-lang/internal-build-utils",
+  "entries": [
+    {
+      "version": "0.2.0",
+      "tag": "@cadl-lang/internal-build-utils_v0.2.0",
+      "date": "Fri, 06 May 2022 17:19:57 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Make RunOptions optional"
+          },
+          {
+            "comment": "Add new util `runDotnetFormat`"
+          },
+          {
+            "comment": "Add logic to publish preview package versions"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "Add `xplatCmd` helper method "
+          }
+        ]
+      }
+    }
+  ]
+}

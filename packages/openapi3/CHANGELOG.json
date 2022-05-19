@@ -2,6 +2,67 @@
   "name": "@cadl-lang/openapi3",
   "entries": [
     {
+      "version": "0.11.0",
+      "tag": "@cadl-lang/openapi3_v0.11.0",
+      "date": "Fri, 06 May 2022 17:19:57 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Uptake change in compiler with children references"
+          },
+          {
+            "comment": "Move decorators to `OpenAPI` namespace"
+          },
+          {
+            "comment": "Uptake change to versioning library"
+          },
+          {
+            "comment": "Remove node 14 support"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "Fix issue not excluding template models from derived models causing crash"
+          },
+          {
+            "comment": "Fix duplicate `description` in parameters"
+          },
+          {
+            "comment": "Rearrange some aspects of operation output in the OpenAPI emitter"
+          },
+          {
+            "comment": "URI-encode refs"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@cadl-lang/compiler\" from `~0.30.0` to `~0.31.0`"
+          },
+          {
+            "comment": "Updating dependency \"@cadl-lang/rest\" from `~0.13.0` to `~0.14.0`"
+          },
+          {
+            "comment": "Updating dependency \"@cadl-lang/openapi\" from `~0.8.0` to `~0.9.0`"
+          },
+          {
+            "comment": "Updating dependency \"@cadl-lang/versioning\" from `~0.4.0` to `~0.5.0`"
+          },
+          {
+            "comment": "Updating dependency \"@cadl-lang/versioning\" from `~0.4.0` to `~0.5.0`"
+          },
+          {
+            "comment": "Updating dependency \"@cadl-lang/compiler\" from `~0.30.0` to `~0.31.0`"
+          },
+          {
+            "comment": "Updating dependency \"@cadl-lang/rest\" from `~0.13.0` to `~0.14.0`"
+          },
+          {
+            "comment": "Updating dependency \"@cadl-lang/openapi\" from `~0.8.0` to `~0.9.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.10.0",
       "tag": "@cadl-lang/openapi3_v0.10.0",
       "date": "Thu, 31 Mar 2022 17:10:49 GMT",

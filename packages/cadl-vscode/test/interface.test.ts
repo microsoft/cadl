@@ -12,24 +12,24 @@ describe("vscode: tmlanguage: interfaces", () => {
     ]);
   });
 
-  it("interface with single mixes", async () => {
-    const tokens = await tokenize("interface Foo mixes Bar {}");
+  it("interface with single extends", async () => {
+    const tokens = await tokenize("interface Foo extends Bar {}");
     deepStrictEqual(tokens, [
       Token.keywords.interface,
       Token.identifiers.type("Foo"),
-      Token.keywords.mixes,
+      Token.keywords.extends,
       Token.identifiers.type("Bar"),
       Token.punctuation.openBrace,
       Token.punctuation.closeBrace,
     ]);
   });
 
-  it("interface with multiple mixes", async () => {
-    const tokens = await tokenize("interface Foo mixes Bar1, Bar2 {}");
+  it("interface with multiple extends", async () => {
+    const tokens = await tokenize("interface Foo extends Bar1, Bar2 {}");
     deepStrictEqual(tokens, [
       Token.keywords.interface,
       Token.identifiers.type("Foo"),
-      Token.keywords.mixes,
+      Token.keywords.extends,
       Token.identifiers.type("Bar1"),
       Token.punctuation.comma,
       Token.identifiers.type("Bar2"),
@@ -51,15 +51,15 @@ describe("vscode: tmlanguage: interfaces", () => {
     ]);
   });
 
-  it("template interface with mixes", async () => {
-    const tokens = await tokenize("interface Foo<T> mixes Bar<T> {}");
+  it("template interface with extends", async () => {
+    const tokens = await tokenize("interface Foo<T> extends Bar<T> {}");
     deepStrictEqual(tokens, [
       Token.keywords.interface,
       Token.identifiers.type("Foo"),
       Token.punctuation.typeParameters.begin,
       Token.identifiers.type("T"),
       Token.punctuation.typeParameters.end,
-      Token.keywords.mixes,
+      Token.keywords.extends,
       Token.identifiers.type("Bar"),
       Token.punctuation.typeParameters.begin,
       Token.identifiers.type("T"),

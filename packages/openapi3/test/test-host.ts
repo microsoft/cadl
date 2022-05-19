@@ -24,6 +24,11 @@ function versionedOutput(path: string, version: string) {
   return path.replace(".json", "." + version + ".json");
 }
 
+export async function diagnoseOpenApiFor(code: string) {
+  const runner = await createOpenAPITestRunner();
+  return await runner.diagnose(code);
+}
+
 export async function openApiFor(code: string, versions?: string[]) {
   const host = await createOpenAPITestHost();
   const outPath = resolveVirtualPath("openapi.json");

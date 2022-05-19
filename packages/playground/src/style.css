@@ -18,6 +18,31 @@ body {
   overflow: hidden;
 }
 
+#grid > .footer {
+  grid-column-start: 1;
+  grid-column-end: 3;
+  grid-row: 3;
+  background-color: #007acc;
+  display: flex;
+  font-size: 14px;
+}
+#grid > .footer.in-pr {
+  background-color: #CE662A;
+}
+
+#grid > .footer > .item {
+  text-decoration: none;
+  color: #fefefe;
+  border-right: 1px solid #d5d5d5;
+  padding: 0 5px;
+}
+#grid > .footer > a.item:hover {
+  background-color: #063a5c;
+}
+#grid > .footer.in-pr > a.item:hover {
+  background-color: #b46e45;
+}
+
 #commandBar {
   grid-column: 1;
   grid-row: 1;
@@ -69,6 +94,12 @@ body {
   overflow: hidden;
 }
 #output {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.monaco-editor-container {
   width: 100%;
   height: 100%;
   overflow: hidden;

@@ -231,7 +231,7 @@
             "items": {
               "$ref": "#/components/schemas/Pet"
             },
-            "x-cadl-name": "PetStore.Pet[]"
+            "x-cadl-name": "Pet[]"
           },
           "nextLink": {
             "type": "string"
@@ -270,7 +270,7 @@
             "items": {
               "$ref": "#/components/schemas/Toy"
             },
-            "x-cadl-name": "PetStore.Toy[]"
+            "x-cadl-name": "Toy[]"
           },
           "nextLink": {
             "type": "string"

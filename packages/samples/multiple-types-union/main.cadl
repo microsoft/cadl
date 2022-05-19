@@ -1,0 +1,35 @@
+import "@cadl-lang/rest";
+import "@cadl-lang/openapi";
+
+@serviceTitle("Pet Store Service")
+@serviceVersion("2021-03-25")
+namespace PetStore;
+using Cadl.Http;
+
+model ApiVersionParam {
+  @header apiVersion: string;
+}
+
+model PetBase {
+  name: string;
+}
+
+model Dog extends PetBase {
+  type: "dog";
+  nextWalkTime: zonedDateTime;
+}
+
+model Cat extends PetBase {
+  type: "cat";
+  catnipDose: int32;
+}
+
+union Pet {
+  cat: Cat,
+  dog: Dog,
+}
+
+@route("/")
+interface MyService {
+  getPet(...ApiVersionParam): OkResponse<Pet>;
+}

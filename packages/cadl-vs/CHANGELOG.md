@@ -1,6 +1,13 @@
 # Change Log - cadl-vs
 
-This log was last generated on Thu, 31 Mar 2022 17:10:49 GMT and should not be manually modified.
+This log was last generated on Fri, 06 May 2022 17:19:57 GMT and should not be manually modified.
+
+## 0.7.0
+Fri, 06 May 2022 17:19:57 GMT
+
+### Minor changes
+
+- Remove node 14 support
 
 ## 0.6.2
 Thu, 31 Mar 2022 17:10:49 GMT

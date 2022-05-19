@@ -92,6 +92,12 @@ model UpdateableProperties<T> {
   ...T;
 }
 
+@doc("The template for omitting properties.")
+@withoutOmittedProperties(TStringOrTuple)
+model OmitProperties<T, TStringOrTuple> {
+  ...T;
+}
+
 @withoutDefaultValues
 model OmitDefaults<T> {
   ...T;

@@ -1,7 +1,10 @@
 import prettier, { AstPath, Doc, Printer } from "prettier";
+import { createScanner, Token } from "../../core/scanner.js";
 import {
   AliasStatementNode,
+  ArrayExpressionNode,
   BlockComment,
+  BooleanLiteralNode,
   CadlScriptNode,
   Comment,
   DecoratorExpressionNode,
@@ -11,6 +14,7 @@ import {
   InterfaceStatementNode,
   IntersectionExpressionNode,
   LineComment,
+  MemberExpressionNode,
   ModelExpressionNode,
   ModelPropertyNode,
   ModelSpreadPropertyNode,
@@ -23,7 +27,9 @@ import {
   Statement,
   StringLiteralNode,
   SyntaxKind,
+  TemplateParameterDeclarationNode,
   TextRange,
+  TupleExpressionNode,
   TypeReferenceNode,
   UnionExpressionNode,
   UnionStatementNode,
@@ -98,6 +104,8 @@ export function printNode(
       return printStringLiteral(path as AstPath<StringLiteralNode>, options);
     case SyntaxKind.NumericLiteral:
       return printNumberLiteral(path as AstPath<NumericLiteralNode>, options);
+    case SyntaxKind.BooleanLiteral:
+      return printBooleanLiteral(path as AstPath<BooleanLiteralNode>, options);
     case SyntaxKind.ModelExpression:
       return printModelExpression(path as AstPath<ModelExpressionNode>, options, print);
     case SyntaxKind.ModelProperty:
@@ -110,15 +118,71 @@ export function printNode(
       return printUnion(path as AstPath<UnionExpressionNode>, options, print);
     case SyntaxKind.IntersectionExpression:
       return printIntersection(path as AstPath<IntersectionExpressionNode>, options, print);
+    case SyntaxKind.ArrayExpression:
+      return printArray(path as AstPath<ArrayExpressionNode>, options, print);
+    case SyntaxKind.TupleExpression:
+      return printTuple(path as AstPath<TupleExpressionNode>, options, print);
+    case SyntaxKind.MemberExpression:
+      return printMemberExpression(path as AstPath<MemberExpressionNode>, options, print);
     case SyntaxKind.EnumMember:
       return printEnumMember(path as AstPath<EnumMemberNode>, options, print);
     case SyntaxKind.UnionVariant:
       return printUnionVariant(path as AstPath<UnionVariantNode>, options, print);
     case SyntaxKind.TypeReference:
       return printTypeReference(path as AstPath<TypeReferenceNode>, options, print);
+    case SyntaxKind.TemplateParameterDeclaration:
+      return printTemplateParameterDeclaration(
+        path as AstPath<TemplateParameterDeclarationNode>,
+        options,
+        print
+      );
     case SyntaxKind.ModelSpreadProperty:
       return printModelSpread(path as AstPath<ModelSpreadPropertyNode>, options, print);
+    case SyntaxKind.VoidKeyword:
+      return "void";
+    case SyntaxKind.NeverKeyword:
+      return "never";
+    // TODO: projection formatting
+    case SyntaxKind.Projection:
+    case SyntaxKind.ProjectionParameterDeclaration:
+    case SyntaxKind.ProjectionModelSelector:
+    case SyntaxKind.ProjectionOperationSelector:
+    case SyntaxKind.ProjectionUnionSelector:
+    case SyntaxKind.ProjectionInterfaceSelector:
+    case SyntaxKind.ProjectionEnumSelector:
+    case SyntaxKind.ProjectionExpressionStatement:
+    case SyntaxKind.ProjectionIfExpression:
+    case SyntaxKind.ProjectionBlockExpression:
+    case SyntaxKind.ProjectionMemberExpression:
+    case SyntaxKind.ProjectionLogicalExpression:
+    case SyntaxKind.ProjectionEqualityExpression:
+    case SyntaxKind.ProjectionUnaryExpression:
+    case SyntaxKind.ProjectionRelationalExpression:
+    case SyntaxKind.ProjectionArithmeticExpression:
+    case SyntaxKind.ProjectionCallExpression:
+    case SyntaxKind.ProjectionLambdaExpression:
+    case SyntaxKind.ProjectionLambdaParameterDeclaration:
+    case SyntaxKind.ProjectionModelExpression:
+    case SyntaxKind.ProjectionModelProperty:
+    case SyntaxKind.ProjectionModelSpreadProperty:
+    case SyntaxKind.ProjectionTupleExpression:
+    case SyntaxKind.ProjectionStatement:
+    case SyntaxKind.ProjectionDecoratorReferenceExpression:
+    case SyntaxKind.Return:
+      return getRawText(node, options);
+    // END-TODO: projection formatting
+
+    case SyntaxKind.JsSourceFile:
+    case SyntaxKind.EmptyStatement:
+    case SyntaxKind.InvalidStatement:
+      return getRawText(node, options);
+    // default:
+    //   return getRawText(node, options);
     default:
+      // Dummy const to ensure we handle all node types.
+      // If you get an error here, add a case for the new node type
+      // you added..
+      const _assertNever: never = node;
       return getRawText(node, options);
   }
 }
@@ -434,31 +498,31 @@ export function printInterfaceStatement(
   const id = path.call(print, "id");
   const { decorators } = printDecorators(path, options, print, { tryInline: false });
   const generic = printTemplateParameters(path, options, print, "templateParameters");
-  const mixes = printInterfaceMixes(path, options, print);
+  const extendList = printInterfaceExtends(path, options, print);
 
   return [
     decorators,
     "interface ",
     id,
     generic,
-    mixes,
+    extendList,
     " ",
     printInterfaceMembers(path, options, print),
   ];
 }
 
-function printInterfaceMixes(
+function printInterfaceExtends(
   path: AstPath<InterfaceStatementNode>,
   options: CadlPrettierOptions,
   print: PrettierChildPrint
 ): prettier.Doc {
   const node = path.getValue();
-  if (node.mixes.length === 0) {
+  if (node.extends.length === 0) {
     return "";
   }
 
-  const keyword = "mixes ";
-  return [group(indent([line, keyword, indent(join([",", line], path.map(print, "mixes")))]))];
+  const keyword = "extends ";
+  return [group(indent([line, keyword, indent(join([",", line], path.map(print, "extends")))]))];
 }
 
 export function printInterfaceMembers(
@@ -568,6 +632,42 @@ function isModelNode(node: Node) {
   return node.kind === SyntaxKind.ModelExpression;
 }
 
+export function printArray(
+  path: AstPath<ArrayExpressionNode>,
+  options: object,
+  print: PrettierChildPrint
+): Doc {
+  return [path.call(print, "elementType"), "[]"];
+}
+
+export function printTuple(
+  path: AstPath<TupleExpressionNode>,
+  options: object,
+  print: PrettierChildPrint
+): Doc {
+  return group([
+    "[",
+    indent(
+      join(
+        ", ",
+        path.map((arg) => [softline, print(arg)], "values")
+      )
+    ),
+    ifBreak(","),
+    softline,
+    "]",
+  ]);
+}
+
+export function printMemberExpression(
+  path: AstPath<MemberExpressionNode>,
+  options: object,
+  print: PrettierChildPrint
+): Doc {
+  const node = path.getValue();
+  return [node.base ? [path.call(print, "base"), "."] : "", path.call(print, "id")];
+}
+
 export function printModelExpression(
   path: AstPath<ModelExpressionNode>,
   options: CadlPrettierOptions,
@@ -675,14 +775,38 @@ export function printModelProperty(
       tryInline: true,
     }
   );
+  let id: Doc;
+  if (node.id.kind === SyntaxKind.StringLiteral && isStringSafeToUnquote(node.id, options)) {
+    id = node.id.value;
+  } else {
+    id = path.call(print, "id");
+  }
   return [
     multiline && isNotFirst ? hardline : "",
     decorators,
-    path.call(print, "id"),
+    id,
     node.optional ? "?: " : ": ",
     path.call(print, "value"),
     node.default ? [" = ", path.call(print, "default")] : "",
   ];
+}
+
+function isStringSafeToUnquote(id: StringLiteralNode, options: CadlPrettierOptions): boolean {
+  const unquotedRawText = getRawText(id, options).slice(1, -1);
+  if (id.value !== unquotedRawText) {
+    return false;
+  }
+  let hasError = false;
+  const scanner = createScanner(id.value, (d) => (hasError = true));
+  if (scanner.scan() !== Token.Identifier) {
+    return false;
+  }
+
+  if (scanner.scan() !== Token.EndOfFile) {
+    return false;
+  }
+
+  return !hasError;
 }
 
 function isModelExpressionInBlock(path: AstPath<ModelExpressionNode>) {
@@ -835,6 +959,15 @@ export function printTypeReference(
   return [type, template];
 }
 
+function printTemplateParameterDeclaration(
+  path: AstPath<TemplateParameterDeclarationNode>,
+  options: CadlPrettierOptions,
+  print: PrettierChildPrint
+): Doc {
+  const node = path.getValue();
+  return [path.call(print, "id"), node.default ? [" = ", path.call(print, "default")] : ""];
+}
+
 function printModelSpread(
   path: prettier.AstPath<ModelSpreadPropertyNode>,
   options: CadlPrettierOptions,
@@ -857,6 +990,14 @@ export function printNumberLiteral(
 ): prettier.doc.builders.Doc {
   const node = path.getValue();
   return getRawText(node, options);
+}
+
+export function printBooleanLiteral(
+  path: prettier.AstPath<BooleanLiteralNode>,
+  options: CadlPrettierOptions
+): prettier.doc.builders.Doc {
+  const node = path.getValue();
+  return node.value ? "true" : "false";
 }
 
 /**

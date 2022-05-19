@@ -12,6 +12,9 @@
   "paths": {
     "/string/null": {
       "get": {
+        "tags": [
+          "String Operations"
+        ],
         "operationId": "String_getNull",
         "description": "Get null string value",
         "parameters": [],
@@ -23,7 +26,7 @@
                 "schema": {
                   "type": "string",
                   "nullable": true,
-                  "x-cadl-name": "Cadl.string | Cadl.null"
+                  "x-cadl-name": "string | null"
                 }
               }
             }
@@ -38,12 +41,12 @@
               }
             }
           }
-        },
-        "tags": [
-          "String Operations"
-        ]
+        }
       },
       "put": {
+        "tags": [
+          "String Operations"
+        ],
         "operationId": "String_putNull",
         "description": "Put null string value",
         "parameters": [],
@@ -62,16 +65,13 @@
             }
           }
         },
-        "tags": [
-          "String Operations"
-        ],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
                 "type": "string",
                 "nullable": true,
-                "x-cadl-name": "Cadl.string | Cadl.null"
+                "x-cadl-name": "string | null"
               }
             }
           }
@@ -80,6 +80,9 @@
     },
     "/string/empty": {
       "get": {
+        "tags": [
+          "String Operations"
+        ],
         "operationId": "String_getEmpty",
         "description": "Get empty string value",
         "parameters": [],
@@ -107,12 +110,12 @@
               }
             }
           }
-        },
-        "tags": [
-          "String Operations"
-        ]
+        }
       },
       "put": {
+        "tags": [
+          "String Operations"
+        ],
         "operationId": "String_putEmpty",
         "description": "Put empty string value",
         "parameters": [],
@@ -131,9 +134,6 @@
             }
           }
         },
-        "tags": [
-          "String Operations"
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -150,6 +150,9 @@
     },
     "/string/mbcs": {
       "get": {
+        "tags": [
+          "String Operations"
+        ],
         "operationId": "String_getMbcs",
         "description": "Get mbcs string value '啊齄丂狛狜隣郎隣兀﨩ˊ〞〡￤℡㈱‐ー﹡﹢﹫、〓ⅰⅹ⒈€㈠㈩ⅠⅫ！￣ぁんァヶΑ︴АЯаяāɡㄅㄩ─╋︵﹄︻︱︳︴ⅰⅹɑɡ〇〾⿻⺁䜣€'",
         "parameters": [],
@@ -177,12 +180,12 @@
               }
             }
           }
-        },
-        "tags": [
-          "String Operations"
-        ]
+        }
       },
       "put": {
+        "tags": [
+          "String Operations"
+        ],
         "operationId": "String_putMbCs",
         "description": "Put mbcs string value '啊齄丂狛狜隣郎隣兀﨩ˊ〞〡￤℡㈱‐ー﹡﹢﹫、〓ⅰⅹ⒈€㈠㈩ⅠⅫ！￣ぁんァヶΑ︴АЯаяāɡㄅㄩ─╋︵﹄︻︱︳︴ⅰⅹɑɡ〇〾⿻⺁䜣€'",
         "parameters": [],
@@ -201,9 +204,6 @@
             }
           }
         },
-        "tags": [
-          "String Operations"
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -220,6 +220,9 @@
     },
     "/string/whitespace": {
       "get": {
+        "tags": [
+          "String Operations"
+        ],
         "operationId": "String_getWhitespace",
         "description": "Get string value with leading and trailing whitespace '<tab><space><space>Now is the time for all good men to come to the aid of their country<tab><space><space>'",
         "parameters": [],
@@ -247,12 +250,12 @@
               }
             }
           }
-        },
-        "tags": [
-          "String Operations"
-        ]
+        }
       },
       "put": {
+        "tags": [
+          "String Operations"
+        ],
         "operationId": "String_putWhitespace",
         "description": "Get string value with leading and trailing whitespace '<tab><space><space>Now is the time for all good men to come to the aid of their country<tab><space><space>'",
         "parameters": [],
@@ -271,9 +274,6 @@
             }
           }
         },
-        "tags": [
-          "String Operations"
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -290,6 +290,9 @@
     },
     "/string/base64Encoding": {
       "get": {
+        "tags": [
+          "String Operations"
+        ],
         "operationId": "String_getBase64Encoding",
         "description": "Get value that is base64 encoded",
         "parameters": [],
@@ -315,12 +318,12 @@
               }
             }
           }
-        },
-        "tags": [
-          "String Operations"
-        ]
+        }
       },
       "put": {
+        "tags": [
+          "String Operations"
+        ],
         "operationId": "String_putBase64Encoding",
         "description": "Put value that is base64 encoded",
         "parameters": [],
@@ -339,9 +342,6 @@
             }
           }
         },
-        "tags": [
-          "String Operations"
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -356,6 +356,9 @@
     },
     "/string/enum/empty": {
       "get": {
+        "tags": [
+          "String Operations"
+        ],
         "operationId": "Enums_getNotExpandable",
         "description": "Get non expandable string enum value",
         "parameters": [],
@@ -380,12 +383,12 @@
               }
             }
           }
-        },
-        "tags": [
-          "String Operations"
-        ]
+        }
       },
       "put": {
+        "tags": [
+          "String Operations"
+        ],
         "operationId": "Enums_putNotExpandable",
         "description": "Put non expandable string enum value",
         "parameters": [],
@@ -404,9 +407,6 @@
             }
           }
         },
-        "tags": [
-          "String Operations"
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -420,6 +420,9 @@
     },
     "/string/enum/constant": {
       "get": {
+        "tags": [
+          "String Operations"
+        ],
         "operationId": "Enums_getConstant",
         "description": "Gets value 'green-color' from a constant",
         "parameters": [],
@@ -444,12 +447,12 @@
               }
             }
           }
-        },
-        "tags": [
-          "String Operations"
-        ]
+        }
       },
       "put": {
+        "tags": [
+          "String Operations"
+        ],
         "operationId": "Enums_putConstant",
         "description": "Sends value 'green-color' from a constant",
         "parameters": [],
@@ -468,9 +471,6 @@
             }
           }
         },
-        "tags": [
-          "String Operations"
-        ],
         "requestBody": {
           "content": {
             "application/json": {

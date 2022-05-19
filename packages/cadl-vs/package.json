@@ -1,7 +1,7 @@
 {
   "name": "cadl-vs",
   "author": "Microsoft Corporation",
-  "version": "0.6.2",
+  "version": "0.7.0",
   "description": "Cadl Language Support for Visual Studio",
   "homepage": "https://github.com/Microsoft/cadl",
   "readme": "https://github.com/Microsoft/cadl/blob/master/README.md",
@@ -18,7 +18,7 @@
   ],
   "type": "module",
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=16.0.0"
   },
   "files": [
     "Microsoft.Cadl.VS2019.vsix",
@@ -29,6 +29,7 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "cadl-vscode": "~0.13.1"
+    "cadl-vscode": "~0.14.0",
+    "@cadl-lang/internal-build-utils": "~0.2.0"
   }
 }

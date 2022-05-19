@@ -14,9 +14,9 @@ describe("compiler: suppress", () => {
   });
 
   async function run(cadl: string) {
-    host.addCadlFile("main.adl", cadl);
+    host.addCadlFile("main.cadl", cadl);
 
-    await host.compile("main.adl", { nostdlib: true });
+    await host.compile("main.cadl", { nostdlib: true });
 
     navigateProgram(host.program, {
       model: (model) => {

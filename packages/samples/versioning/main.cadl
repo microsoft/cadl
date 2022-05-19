@@ -7,8 +7,8 @@ import "./library.cadl";
 @versionedDependency(
   Library,
   {
-    "v1": "1.0",
-    "v2": "1.1",
+    v1: "1.0",
+    v2: "1.1",
   }
 )
 namespace VersionedApi;
@@ -20,6 +20,7 @@ model ApiVersionParam {
   @header apiVersion: VERSIONS;
 }
 
+@discriminator("type")
 model PetBase {
   name: string;
   favoriteToys: Library.PetToy[];
@@ -42,14 +43,9 @@ model Cat extends PetBase {
   catnipDose: int32;
 }
 
-union Pet {
-  cat: Cat,
-  dog: Dog,
-}
-
 @route("/")
 interface MyService {
-  getPet(...ApiVersionParam): OkResponse<Pet>;
+  getPet(...ApiVersionParam): OkResponse<PetBase>;
 
   @added("v2")
   @post

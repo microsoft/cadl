@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@cadl-lang/compiler",
+      "comment": "Allow cadl compile . on the compiler itself",
+      "type": "none"
+    }
+  ],
+  "packageName": "@cadl-lang/compiler"
+}

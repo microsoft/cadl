@@ -62,6 +62,15 @@ export function getDiscriminator(program: Program, entity: Type): Discriminator 
 }
 
 const segmentsKey = Symbol("segments");
+
+/**
+ * `@segment` defines the preceding path segment for a `@path` parameter in auto-generated routes
+ *
+ * The first argument should be a string that will be inserted into the operation route before the
+ * path parameter's name field.
+ *
+ * `@segment` can only be applied to model properties or operation parameters.
+ */
 export function $segment({ program }: DecoratorContext, entity: Type, name: string) {
   if (
     !validateDecoratorTarget(program, entity, "@segment", ["Model", "ModelProperty", "Operation"])

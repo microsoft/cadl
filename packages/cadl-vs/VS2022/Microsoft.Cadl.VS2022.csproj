@@ -10,7 +10,7 @@
     <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.0.31902.203" ExcludeAssets="Runtime" />
     <PackageReference Include="Microsoft.VisualStudio.Workspace" Version="16.3.43" ExcludeAssets="Runtime" />
     <PackageReference Include="Microsoft.VisualStudio.Workspace.VSIntegration" Version="16.3.43" ExcludeAssets="Runtime" />
-    <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.0.5232" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.1.4057" PrivateAssets="All" />
   </ItemGroup>
   <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />
   <Import Project="../Microsoft.Cadl.VS.targets" />

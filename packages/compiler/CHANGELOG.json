@@ -2,6 +2,123 @@
   "name": "@cadl-lang/compiler",
   "entries": [
     {
+      "version": "0.31.0",
+      "tag": "@cadl-lang/compiler_v0.31.0",
+      "date": "Fri, 06 May 2022 17:19:57 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Prompt on cadl vs install if multiple versions of VS are installed"
+          },
+          {
+            "comment": "Improve module resolution logic to allow compiling a cadl library"
+          },
+          {
+            "comment": "Add code preview and coloring for diagnostics."
+          },
+          {
+            "comment": "Add ability to import library or emitter defined in parent folder. Adds the ability to use the actual emitter name in a samples folder of that emitter"
+          },
+          {
+            "comment": "Formatter has ability to ignore patterns"
+          },
+          {
+            "comment": "Formatter: remove quotes in model properties when not needed"
+          },
+          {
+            "comment": "Add library loading debug logging"
+          },
+          {
+            "comment": "Include manifest with version and commit"
+          },
+          {
+            "comment": "Rename `mixes` to `extends` for interfaces"
+          },
+          {
+            "comment": "Include reference from parent model to all children"
+          },
+          {
+            "comment": "Cli: Add `--no-emit` flag configuring the `noEmit` compilerOption"
+          },
+          {
+            "comment": "Add `warn-as-error` flag to cli that will return non zero exit code when there is a warning"
+          },
+          {
+            "comment": "Add find references and rename support to language server"
+          },
+          {
+            "comment": "Add goto definition of namespaces, usings, and decorators to language server"
+          },
+          {
+            "comment": "Export `isTemplate` helper method"
+          },
+          {
+            "comment": "Add namespace to model expressions"
+          },
+          {
+            "comment": "Make Program.checker required"
+          },
+          {
+            "comment": "Added formatting to a few more missing syntax(`array`, `tuple`, `template parameters`)"
+          },
+          {
+            "comment": "Add OmitProperties type and @withoutOmittedProperties decorator"
+          },
+          {
+            "comment": "Remove node 14 support"
+          },
+          {
+            "comment": "Log PID and timestamps in language server"
+          },
+          {
+            "comment": "Update to Unicode 14.0 and disallow U+FFFD"
+          },
+          {
+            "comment": "Add option to Checker.getTypeName to filter namespaces"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "Improve tests for doc decorator"
+          },
+          {
+            "comment": "Add workaround for npx bug causing issue with backslash in cli on windows"
+          },
+          {
+            "comment": "Do not validate default assignment when property type is an error type. Prevent additional unrelated error to the original problem with the property type."
+          },
+          {
+            "comment": "Fix projection bug setting the namespace of operation with the interface"
+          },
+          {
+            "comment": "Fix logger levels"
+          },
+          {
+            "comment": "Fix issue with using model in template default"
+          },
+          {
+            "comment": "Give a helpful error when code is missing from path"
+          },
+          {
+            "comment": "Don't complete decorator names in type reference position"
+          },
+          {
+            "comment": "Preserve namespace nesting in versioning projections"
+          }
+        ],
+        "none": [
+          {
+            "comment": "Add `CadlLanguageConfiguration` containing the configuration used by editor (vscode, monaco)"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@cadl-lang/internal-build-utils\" from `~0.1.0` to `~0.2.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.30.0",
       "tag": "@cadl-lang/compiler_v0.30.0",
       "date": "Thu, 31 Mar 2022 17:10:49 GMT",

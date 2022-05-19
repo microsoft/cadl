@@ -1,0 +1,3 @@
+import "my-cadl-library";
+
+op test(): MyCadlLibrary.Test;

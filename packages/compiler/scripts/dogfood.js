@@ -1,6 +1,13 @@
+// @ts-check
+import { run, xplatCmd } from "@cadl-lang/internal-build-utils";
 import { readFileSync } from "fs";
-import { run } from "../../../eng/scripts/helpers.js";
+import { dirname, resolve } from "path";
+import { fileURLToPath } from "url";
 
-const version = JSON.parse(readFileSync("package.json")).version;
-run("npm", ["pack"]);
-run("npm", ["install", "-g", `cadl-lang-compiler-${version}.tgz`]);
+const pkgRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const version = JSON.parse(readFileSync(resolve(pkgRoot, "package.json"), "utf-8")).version;
+
+console.log("Packing...");
+await run(xplatCmd("npm"), ["pack"]);
+console.log("Installing...");
+await run(xplatCmd("npm"), ["install", "-g", `cadl-lang-compiler-${version}.tgz`]);

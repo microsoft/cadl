@@ -1,4 +1,4 @@
-import assert from "assert";
+import assert, { deepStrictEqual } from "assert";
 import { CharCode } from "../core/charcode.js";
 import { formatDiagnostic, logVerboseTestOutput } from "../core/diagnostics.js";
 import { hasParseError, parse, visitChildren } from "../core/parser.js";
@@ -134,15 +134,14 @@ describe("compiler: syntax", () => {
     parseEach([
       "interface Foo { }",
       "interface Foo<T> { }",
-      "interface Foo<T> mixes Bar<T> { }",
-      "interface Foo mixes Bar, Baz<T> { }",
+      "interface Foo<T> extends Bar<T> { }",
+      "interface Foo extends Bar, Baz<T> { }",
       "interface Foo { foo(): int32; }",
       "interface Foo { foo(): int32; bar(): int32; }",
       "interface Foo { op foo(): int32; op bar(): int32; baz(): int32; }",
     ]);
 
     parseErrorEach([
-      ["interface Foo<T> extends Bar<T> {}", [/mixes/]],
       ["interface X {", [/'}' expected/]],
       ["interface X { foo(): string; interface Y", [/'}' expected/]],
       ["interface X { foo(a: string", [/'\)' expected/]],
@@ -156,7 +155,11 @@ describe("compiler: syntax", () => {
   });
 
   describe("tuple model expressions", () => {
-    parseEach(['namespace A { op b(param: [number, string]): [1, "hi"]; }']);
+    parseEach([
+      'namespace A { op b(param: [number, string]): [1, "hi"]; }',
+      "alias EmptyTuple =  [];",
+      "model Template<T=[]> { }",
+    ]);
   });
 
   describe("array expressions", () => {
@@ -428,6 +431,7 @@ describe("compiler: syntax", () => {
       ["\u{FDD0}", /Invalid character/], // non-character
       ["\u{244B}", /Invalid character/], // unassigned
       ["\u{009F}", /Invalid character/], // control
+      ["\u{FFFD}", /Invalid character/], // replacement character
       ["#", /Identifier expected/], // directive
       ["42", /Identifier expected/],
       ["true", /Keyword cannot be used as identifier/],
@@ -562,6 +566,7 @@ describe("compiler: syntax", () => {
         `{ x: 1 }`,
         `{ x: if 1 { Foo; } else { Bar; } }`,
         `[a, b]`,
+        `[]`,
         `(a)`,
         `(a + 1)`,
       ];
@@ -619,9 +624,46 @@ function parseEach(cases: (string | [string, Callback])[]) {
 
       assert(astNode.printable, "Parse tree with no errors should be printable");
 
-      checkPositioning(astNode, astNode.file);
+      checkInvariants(astNode);
     });
   }
+}
+
+function checkInvariants(astNode: CadlScriptNode) {
+  checkVisitChildren(astNode, astNode.file);
+  checkPositioning(astNode, astNode.file);
+}
+
+function dynamicVisitChildren(node: Node, cb: (key: string, child: any) => void) {
+  for (const [key, value] of Object.entries(node)) {
+    switch (key) {
+      case "parent":
+      case "parseDiagnostics":
+        return;
+    }
+    if (Array.isArray(value)) {
+      for (const each of value) {
+        cb(key, each);
+      }
+    } else if (typeof value === "object" && "kind" in value) {
+      cb(key, value);
+    }
+  }
+}
+
+function checkVisitChildren(node: Node, file: SourceFile) {
+  const visited = new Map<Node, string>();
+
+  dynamicVisitChildren(node, (key, child) => visited.set(child, key));
+  visitChildren(node, (child) => void visited.delete(child));
+
+  deepStrictEqual(
+    Array.from(visited.values()),
+    [],
+    `Nodes not visited by visitChildren of ${SyntaxKind[node.kind]}`
+  );
+
+  visitChildren(node, (child) => checkVisitChildren(child, file));
 }
 
 function checkPositioning(node: Node, file: SourceFile) {
@@ -689,7 +731,7 @@ function parseErrorEach(
         "parse tree with errors other than missing punctuation should not be printable"
       );
 
-      checkPositioning(astNode, astNode.file);
+      checkInvariants(astNode);
     });
   }
 }
@@ -705,6 +747,9 @@ function dumpAST(astNode: Node, file?: SourceFile) {
   });
 
   function replacer(key: string, value: any) {
+    if (key === "parent") {
+      return undefined; // prevent cycles if run on bound nodes
+    }
     if (key === "kind") {
       // swap numeric kind for readable name
       return SyntaxKind[value];

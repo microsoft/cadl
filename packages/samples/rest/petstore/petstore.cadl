@@ -61,28 +61,28 @@ model Insurance {
   deductible: int32;
 }
 
-interface Pets mixes ResourceOperations<Pet, PetStoreError> {}
+interface Pets extends ResourceOperations<Pet, PetStoreError> {}
 
 interface PetCheckups
-  mixes ExtensionResourceCreateOrUpdate<Checkup, Pet, PetStoreError>,
+  extends ExtensionResourceCreateOrUpdate<Checkup, Pet, PetStoreError>,
     ExtensionResourceList<Checkup, Pet, PetStoreError> {}
 
-interface PetInsurance mixes SingletonResourceOperations<Insurance, Pet, PetStoreError> {}
+interface PetInsurance extends SingletonResourceOperations<Insurance, Pet, PetStoreError> {}
 
-interface Toys mixes ResourceRead<Toy, PetStoreError> {
+interface Toys extends ResourceRead<Toy, PetStoreError> {
   @listsResource(Toy)
   list(...ParentKeysOf<Toy>, @query nameFilter: string): Page<Toy> | PetStoreError;
 }
-interface ToyInsurance mixes SingletonResourceOperations<Insurance, Toy, PetStoreError> {}
+interface ToyInsurance extends SingletonResourceOperations<Insurance, Toy, PetStoreError> {}
 
 interface Checkups
-  mixes ResourceCreateOrUpdate<Checkup, PetStoreError>,
+  extends ResourceCreateOrUpdate<Checkup, PetStoreError>,
     ResourceList<Checkup, PetStoreError> {}
 
-interface Owners mixes ResourceOperations<Owner, PetStoreError> {}
+interface Owners extends ResourceOperations<Owner, PetStoreError> {}
 
 interface OwnerCheckups
-  mixes ExtensionResourceCreateOrUpdate<Checkup, Owner, PetStoreError>,
+  extends ExtensionResourceCreateOrUpdate<Checkup, Owner, PetStoreError>,
     ExtensionResourceList<Checkup, Owner, PetStoreError> {}
 
-interface OwnerInsurance mixes SingletonResourceOperations<Insurance, Owner, PetStoreError> {}
+interface OwnerInsurance extends SingletonResourceOperations<Insurance, Owner, PetStoreError> {}

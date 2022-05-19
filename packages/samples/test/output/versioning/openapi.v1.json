@@ -20,7 +20,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Pet"
+                  "$ref": "#/components/schemas/PetBase"
                 }
               }
             }
@@ -67,37 +67,13 @@
       }
     },
     "schemas": {
-      "Pet": {
+      "PetBase": {
         "type": "object",
         "properties": {
           "type": {
             "type": "string",
-            "enum": [
-              "dog"
-            ]
+            "description": "Discriminator property for PetBase."
           },
-          "nextWalkTime": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "walkerName": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "type",
-          "nextWalkTime",
-          "walkerName"
-        ],
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/PetBase"
-          }
-        ]
-      },
-      "PetBase": {
-        "type": "object",
-        "properties": {
           "name": {
             "type": "string"
           },
@@ -107,6 +83,12 @@
               "$ref": "#/components/schemas/Library.PetToy"
             },
             "x-cadl-name": "Library.PetToy[]"
+          }
+        },
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "dog": "#/components/schemas/Dog"
           }
         },
         "required": [

@@ -8,11 +8,16 @@ steps:
       versionSpec: ${{ parameters.nodeVersion }}
     displayName: Install Node.js
 
+  - task: UseDotNet@2
+    inputs:
+      version: 6.0.x
+
   - script: node common/scripts/install-run-rush.js install
     displayName: Install JavaScript Dependencies
 
-  - script: node packages/cadl-vs/scripts/build.js --restore
+  - script: dotnet restore
     displayName: Restore .NET Dependencies
+    workingDirectory: packages/cadl-vs
 
   - script: node common/scripts/install-run-rush.js rebuild --verbose
     displayName: Build
@@ -25,7 +30,7 @@ steps:
   - script: node common/scripts/install-run-rush.js check-format
     displayName: Check Formatting
 
-  - script: node common/scripts/install-run-rush.js lint
+  - script: node common/scripts/install-run-rush.js lint --verbose
     displayName: Lint
 
   - script: cd packages/samples && npm run regen-samples

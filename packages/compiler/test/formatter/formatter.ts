@@ -233,6 +233,23 @@ model Foo {
 `,
       });
     });
+
+    it("remove unncessary quotes", () => {
+      assertFormat({
+        code: `
+model Foo {
+  "abc": string;
+  "this-needs-quotes": int32;
+}
+`,
+        expected: `
+model Foo {
+  abc: string;
+  "this-needs-quotes": int32;
+}
+`,
+      });
+    });
   });
 
   describe("comments", () => {
@@ -961,6 +978,103 @@ interface Foo {
 interface Foo {
   foo(): int32;
 }`,
+      });
+    });
+  });
+
+  describe("templated types", () => {
+    it("format parameter declarations", () => {
+      assertFormat({
+        code: `
+model Foo<   T  , K
+> {
+}`,
+        expected: `
+model Foo<T, K> {}`,
+      });
+    });
+
+    it("format parameter declarations with defaults", () => {
+      assertFormat({
+        code: `
+model Foo<   T  ="abc",    K =        134
+> {
+}`,
+        expected: `
+model Foo<T = "abc", K = 134> {}`,
+      });
+    });
+  });
+
+  describe("array expression", () => {
+    it("format an array expression", () => {
+      assertFormat({
+        code: `
+alias Foo = string       [];
+`,
+        expected: `
+alias Foo = string[];
+`,
+      });
+    });
+  });
+
+  describe("tuple expression", () => {
+    it("format a single line tuple", () => {
+      assertFormat({
+        code: `
+alias Foo = [string, 
+  "abc",           134];
+`,
+        expected: `
+alias Foo = [string, "abc", 134];
+`,
+      });
+    });
+    it("format a long tuple over multi line", () => {
+      assertFormat({
+        code: `
+alias Foo = ["very long text that will overflow 1","very long text that will overflow 2", "very long text that will overflow 3" ];
+`,
+        expected: `
+alias Foo = [
+  "very long text that will overflow 1",
+  "very long text that will overflow 2",
+  "very long text that will overflow 3",
+];
+`,
+      });
+    });
+  });
+
+  describe("member expression", () => {
+    it("a simple member expression", () => {
+      assertFormat({
+        code: `
+model Foo {
+  p: Some .     bar;
+}
+`,
+        expected: `
+model Foo {
+  p: Some.bar;
+}
+`,
+      });
+    });
+    it("nested member expression", () => {
+      assertFormat({
+        code: `
+model Foo {
+  p: Some . 
+  Nested.     bar;
+}
+`,
+        expected: `
+model Foo {
+  p: Some.Nested.bar;
+}
+`,
       });
     });
   });

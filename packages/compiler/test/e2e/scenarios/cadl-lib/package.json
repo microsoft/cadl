@@ -1,0 +1,6 @@
+{
+  "name": "@cadl-lang/test-cadl-lib",
+  "type": "module",
+  "main": "lib.js",
+  "cadlMain": "lib.cadl"
+}

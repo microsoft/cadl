@@ -1,4 +1,4 @@
-import { ModelType, NamespaceType } from "@cadl-lang/compiler";
+import { ModelType, NamespaceType, Program } from "@cadl-lang/compiler";
 import {
   BasicTestRunner,
   createTestWrapper,
@@ -6,10 +6,11 @@ import {
   expectDiagnostics,
 } from "@cadl-lang/compiler/testing";
 import { ok, strictEqual } from "assert";
-import { getVersionRecords } from "../src/versioning.js";
+import { buildVersionProjections } from "../src/versioning.js";
 import { createVersioningTestHost } from "./test-host.js";
+import { assertHasProperties } from "./utils.js";
 
-describe("cadl: versioning: depdendencies", () => {
+describe("versioning: reference versioned library", () => {
   let runner: BasicTestRunner;
 
   beforeEach(async () => {
@@ -48,7 +49,7 @@ describe("cadl: versioning: depdendencies", () => {
           @test model Test extends VersionedLib.Foo {}
         } 
     `)) as { MyService: NamespaceType; Test: ModelType };
-      const versions = getVersionRecords(runner.program, MyService);
+      const versions = buildVersionProjections(runner.program, MyService);
       strictEqual(versions.length, 1);
       strictEqual(versions[0].version, undefined);
       strictEqual(versions[0].projections.length, 1);
@@ -83,7 +84,7 @@ describe("cadl: versioning: depdendencies", () => {
           @test model Test extends VersionedLib.Foo {}
         } 
     `)) as { MyService: NamespaceType; Test: ModelType };
-      const versions = getVersionRecords(runner.program, MyService);
+      const versions = buildVersionProjections(runner.program, MyService);
       strictEqual(versions.length, 2);
       strictEqual(versions[0].version, "v1");
       strictEqual(versions[1].version, "v2");
@@ -192,7 +193,7 @@ describe("cadl: versioning: depdendencies", () => {
         namespace DemoService {
           model Foo {}
 
-          interface Test mixes NonVersioned.Foo<Foo> {}
+          interface Test extends NonVersioned.Foo<Foo> {}
         }
 
         namespace NonVersioned {
@@ -221,3 +222,81 @@ describe("cadl: versioning: depdendencies", () => {
     });
   });
 });
+
+describe("versioning: dependencies", () => {
+  let runner: BasicTestRunner;
+
+  beforeEach(async () => {
+    const host = await createVersioningTestHost();
+    runner = createTestWrapper(
+      host,
+      (code) => `
+      import "@cadl-lang/versioning";
+      ${code}`
+    );
+  });
+
+  it("can spread versioned model from another library", async () => {
+    const { MyService, Test } = (await runner.compile(`
+      @versioned("l1" | "l2")
+      namespace VersionedLib {
+        model Spread<T> {
+          t: string;
+          ...T;
+        }
+      }
+
+      @versioned("1" | "2")
+      @versionedDependency(VersionedLib, {"1": "l1", "2": "l2"})
+      @test namespace MyService {
+        model Spreadable {
+          a: int32;
+          @added("2") b: int32;
+        }
+        @test model Test extends VersionedLib.Spread<Spreadable> {}
+      }
+      `)) as { MyService: NamespaceType; Test: ModelType };
+
+    const [v1, v2] = runProjections(runner.program, MyService);
+
+    const SpreadInstance1 = (v1.projectedTypes.get(Test) as any).baseModel;
+    assertHasProperties(SpreadInstance1, ["t", "a"]);
+    const SpreadInstance2 = (v2.projectedTypes.get(Test) as any).baseModel;
+    assertHasProperties(SpreadInstance2, ["t", "a", "b"]);
+  });
+
+  // Todo https://github.com/microsoft/cadl/issues/466
+  it.skip("can handle when the versions name are the same across different libraries", async () => {
+    const { MyService, Test } = (await runner.compile(`
+      @versioned("1" | "2")
+      namespace VersionedLib {
+        model Spread<T> {
+          t: string;
+          ...T;
+        }
+      }
+
+      @versioned("1" | "2")
+      @versionedDependency(VersionedLib, {"1": "2", "2": "1"})
+      @test namespace MyService {
+        model Spreadable {
+          a: int32;
+          @added("2") b: int32;
+        }
+        @test model Test extends VersionedLib.Spread<Spreadable> {}
+      }
+      `)) as { MyService: NamespaceType; Test: ModelType };
+
+    const [v1, v2] = runProjections(runner.program, MyService);
+
+    const SpreadInstance1 = (v1.projectedTypes.get(Test) as any).baseModel;
+    assertHasProperties(SpreadInstance1, ["t", "a"]);
+    const SpreadInstance2 = (v2.projectedTypes.get(Test) as any).baseModel;
+    assertHasProperties(SpreadInstance2, ["t", "a", "b"]);
+  });
+});
+
+function runProjections(program: Program, rootNs: NamespaceType) {
+  const versions = buildVersionProjections(program, rootNs);
+  return versions.map((x) => program.enableProjections(x.projections, rootNs));
+}

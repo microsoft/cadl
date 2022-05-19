@@ -2,6 +2,40 @@
   "name": "@cadl-lang/rest",
   "entries": [
     {
+      "version": "0.14.0",
+      "tag": "@cadl-lang/rest_v0.14.0",
+      "date": "Fri, 06 May 2022 17:19:57 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Add RouteOptions and AutoRouteOptions types to enable customization of automatic route generation when calling getAllRoutes"
+          },
+          {
+            "comment": "Uptake `mixes` -> `extends` rename"
+          },
+          {
+            "comment": "Remove node 14 support"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "Fix issue where empty response model with children would result in 204\""
+          },
+          {
+            "comment": "Add validation to `Resource` interface to ensure `TError` is an error type"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@cadl-lang/compiler\" from `~0.30.0` to `~0.31.0`"
+          },
+          {
+            "comment": "Updating dependency \"@cadl-lang/compiler\" from `~0.30.0` to `~0.31.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.13.0",
       "tag": "@cadl-lang/rest_v0.13.0",
       "date": "Thu, 31 Mar 2022 17:10:49 GMT",

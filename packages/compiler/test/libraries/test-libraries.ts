@@ -3,7 +3,10 @@ import { NodeHost } from "../../core/node-host.js";
 import { createProgram } from "../../core/program.js";
 import { createTestHost, expectDiagnosticEmpty, expectDiagnostics } from "../../testing/index.js";
 
-const libs = ["simple"];
+const libs = [
+  "simple", // Load a library in `node_modules`
+  "library-dev/samples", // Load library defined in parent folder.
+];
 
 describe("compiler: libraries", () => {
   for (const lib of libs) {

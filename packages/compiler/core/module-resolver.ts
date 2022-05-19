@@ -22,6 +22,15 @@ export interface ResolveModuleHost {
   readFile(path: string): Promise<string>;
 }
 
+/**
+ * Type for package.json
+ */
+export interface NodePackage {
+  name: string;
+  main: string;
+  cadlMain?: string;
+}
+
 type ResolveModuleErrorCode = "MODULE_NOT_FOUND";
 export class ResolveModuleError extends Error {
   public constructor(public code: ResolveModuleErrorCode, message: string) {
@@ -77,17 +86,35 @@ export async function resolveModule(
     return paths;
   }
 
-  function getPackageCandidates(name: string, baseDir: string) {
+  function getPackageCandidates(
+    name: string,
+    baseDir: string
+  ): Array<{ path: string; type: "node_modules" | "self" }> {
     const dirs = listAllParentDirs(baseDir);
-    return dirs.map((x) => joinPaths(x, "node_modules", name));
+    return dirs.flatMap((x) => [
+      { path: x, type: "self" },
+      { path: joinPaths(x, "node_modules", name), type: "node_modules" },
+    ]);
   }
 
   async function findAsNodeModule(name: string, baseDir: string): Promise<string | undefined> {
     const dirs = getPackageCandidates(name, baseDir);
-    for (const dir of dirs) {
-      if (await isDirectory(host, dir)) {
-        const n = await loadAsDirectory(dir);
-        if (n) return n;
+    for (const { type, path } of dirs) {
+      if (type === "node_modules") {
+        if (await isDirectory(host, path)) {
+          const n = await loadAsDirectory(path);
+          if (n) return n;
+        }
+      } else if (type === "self") {
+        const pkgFile = resolvePath(path, "package.json");
+
+        if (await isFile(host, pkgFile)) {
+          const pkg = await readPackage(host, pkgFile);
+          if (pkg.name === name) {
+            const n = await loadPackage(path, pkg);
+            if (n) return n;
+          }
+        }
       }
     }
     return undefined;
@@ -97,23 +124,27 @@ export async function resolveModule(
     const pkgFile = resolvePath(directory, "package.json");
     if (await isFile(host, pkgFile)) {
       const pkg = await readPackage(host, pkgFile);
-      const mainFile = options.resolveMain ? options.resolveMain(pkg) : pkg.main;
-      if (typeof mainFile !== "string") {
-        throw new TypeError(`package "${pkg.name}" main must be a string but was '${mainFile}'`);
-      }
-
-      const mainFullPath = resolvePath(directory, mainFile);
-      try {
-        return loadAsFile(mainFullPath) ?? loadAsDirectory(mainFullPath);
-      } catch (e) {
-        throw new Error(
-          `Cannot find module '${mainFullPath}'. Please verify that the package.json has a valid "main" entry`
-        );
-      }
+      return loadPackage(directory, pkg);
     }
 
     // Try to load index file
     return loadAsFile(joinPaths(directory, "index"));
+  }
+
+  async function loadPackage(directory: string, pkg: NodePackage): Promise<string | undefined> {
+    const mainFile = options.resolveMain ? options.resolveMain(pkg) : pkg.main;
+    if (typeof mainFile !== "string") {
+      throw new TypeError(`package "${pkg.name}" main must be a string but was '${mainFile}'`);
+    }
+
+    const mainFullPath = resolvePath(directory, mainFile);
+    try {
+      return loadAsFile(mainFullPath) ?? loadAsDirectory(mainFullPath);
+    } catch (e) {
+      throw new Error(
+        `Cannot find module '${mainFullPath}'. Please verify that the package.json has a valid "main" entry`
+      );
+    }
   }
 
   async function loadAsFile(file: string): Promise<string | undefined> {
@@ -132,7 +163,7 @@ export async function resolveModule(
   }
 }
 
-async function readPackage(host: ResolveModuleHost, pkgfile: string) {
+async function readPackage(host: ResolveModuleHost, pkgfile: string): Promise<NodePackage> {
   const content = await host.readFile(pkgfile);
   return JSON.parse(content);
 }

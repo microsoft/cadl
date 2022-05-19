@@ -1,0 +1,24 @@
+import "@cadl-lang/rest";
+
+@serviceTitle("Widget Service")
+namespace DemoService;
+using Cadl.Http;
+
+model Widget {
+  @key id: string;
+  weight: int32;
+  color: "red" | "blue";
+}
+
+@error
+model Error {
+  code: int32;
+  message: string;
+}
+
+interface WidgetService {
+  @get list(): Widget[] | Error;
+  @route("widgets/{id}") @get read(@path id: string): Widget | Error;
+  @post create(@body body: Widget): Widget | Error;
+  @route("customGet") @get customGet(): Widget | Error;
+}

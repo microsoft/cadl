@@ -22,3 +22,22 @@ export type OpenAPI3Schema = Extensions & {
   anyOf?: any[];
   oneOf?: any[];
 };
+
+export type OpenAPI3ParameterType = "header" | "query" | "path";
+export type OpenAPI3Parameter = Extensions & {
+  in: OpenAPI3ParameterType;
+  schema: OpenAPI3Schema;
+  name: string;
+  required?: boolean;
+  description?: string;
+};
+
+export type OpenAPI3Operation = Extensions & {
+  description?: string;
+  summary?: string;
+  responses?: any;
+  tags?: string[];
+  operationId?: string;
+  requestBody?: any;
+  parameters: OpenAPI3Parameter[];
+};

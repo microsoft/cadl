@@ -14,6 +14,10 @@ const disallowedProperties = [
   "Unassigned",
 ];
 
+const disallowedCodePoints = [
+  0xfffd, // REPLACEMENT CHARACTER
+];
+
 const MIN_NONASCII_CODEPOINT = 0x80;
 const MAX_UNICODE_CODEPOINT = 0x10ffff;
 
@@ -23,6 +27,13 @@ const disallowedRegex = new RegExp(
 );
 
 const map = computeMap();
+
+function isDisallowed(codePoint) {
+  return (
+    disallowedCodePoints.includes(codePoint) ||
+    disallowedRegex.test(String.fromCodePoint(codePoint))
+  );
+}
 
 function formatPairs(array) {
   let s = "";
@@ -36,7 +47,7 @@ function computeMap() {
   const map = [];
   let active = false;
   for (let i = MIN_NONASCII_CODEPOINT; i <= MAX_UNICODE_CODEPOINT; i++) {
-    const allowed = !disallowedRegex.test(String.fromCodePoint(i));
+    const allowed = !isDisallowed(i);
     if (allowed !== active) {
       map.push(active ? i - 1 : i);
       active = !active;
@@ -63,5 +74,5 @@ ${formatPairs(map)}
 ];
 `;
 
-const file = resolve(fileURLToPath(import.meta.url), "../../compiler/nonascii.ts");
+const file = resolve(fileURLToPath(import.meta.url), "../../core/nonascii.ts");
 writeFileSync(file, src);

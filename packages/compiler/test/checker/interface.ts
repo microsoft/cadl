@@ -30,7 +30,7 @@ describe("compiler: interfaces", () => {
       Foo: InterfaceType;
     };
 
-    strictEqual(Foo.namespace, testHost.program.checker!.getGlobalNamespaceType());
+    strictEqual(Foo.namespace, testHost.program.checker.getGlobalNamespaceType());
     strictEqual(Foo.name, "Foo");
     strictEqual(Foo.operations.size, 1);
     const bar = Foo.operations.get("bar");
@@ -86,7 +86,7 @@ describe("compiler: interfaces", () => {
       "main.cadl",
       `
       interface Bar<T> { bar(): T }
-      @test interface Foo<T> mixes Bar<T> {
+      @test interface Foo<T> extends Bar<T> {
         foo(): T;
       }
 
@@ -109,7 +109,7 @@ describe("compiler: interfaces", () => {
       `
       interface Bar<T> { bar(): T }
       interface Baz<T> { baz(): T }
-      @test interface Foo<T> mixes Bar<T>, Baz<T> {
+      @test interface Foo<T> extends Bar<T>, Baz<T> {
         foo(): T;
       }
 
@@ -127,7 +127,7 @@ describe("compiler: interfaces", () => {
     strictEqual((Foo.operations.get("bar")!.returnType as ModelType).name, "int32");
   });
 
-  it("doesn't copy interface decorators down when using mixes", async () => {
+  it("doesn't copy interface decorators down when using extends", async () => {
     const blues = new Set<Type>();
     testHost.addJsFile("test.js", {
       $blue(p: any, t: InterfaceType) {
@@ -140,7 +140,7 @@ describe("compiler: interfaces", () => {
       `
       import "./test.js";
       @blue interface Foo { foo(): int32 }
-      @test interface Bar mixes Foo {
+      @test interface Bar extends Foo {
         bar(): int32;
       }
       `
@@ -169,7 +169,7 @@ describe("compiler: interfaces", () => {
       `
       import "./test.js";
       interface Foo { @blue foo(): int32 }
-      @test interface Bar mixes Foo {}
+      @test interface Bar extends Foo {}
       `
     );
 
@@ -187,14 +187,14 @@ describe("compiler: interfaces", () => {
       `
       interface Bar { bar(): int32 }
       interface Baz { bar(): int32 }
-      @test interface Foo mixes Bar, Baz { }
+      @test interface Foo extends Bar, Baz { }
       `
     );
 
     const diagnostics = await testHost.diagnose("./");
     expectDiagnostics(diagnostics, {
-      code: "mixes-interface-duplicate",
-      message: "Interface mixes cannot have duplicate members. The duplicate member is named bar",
+      code: "extends-interface-duplicate",
+      message: "Interface extends cannot have duplicate members. The duplicate member is named bar",
     });
   });
 
@@ -203,7 +203,7 @@ describe("compiler: interfaces", () => {
       "main.cadl",
       `
       interface Bar { bar(): int32 }
-      @test interface Foo mixes Bar { bar(): string }
+      @test interface Foo extends Bar { bar(): string }
       `
     );
 
@@ -220,13 +220,13 @@ describe("compiler: interfaces", () => {
       "main.cadl",
       `
       model Bar { }
-      @test interface Foo mixes Bar { bar(): string }
+      @test interface Foo extends Bar { bar(): string }
       `
     );
 
     const diagnostics = await testHost.diagnose("./");
     expectDiagnostics(diagnostics, {
-      code: "mixes-interface",
+      code: "extends-interface",
       message: "Interfaces can only mix other interfaces",
     });
   });

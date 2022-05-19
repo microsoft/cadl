@@ -20,8 +20,8 @@ const shouldUpdate = process.argv.indexOf("--update-snapshots") !== -1;
 
 async function getOutput(name: string): Promise<string | undefined> {
   try {
-    const output = await readFile(join(scenarioRoot, "outputs", name));
-    return output.toString();
+    const output = await readFile(join(scenarioRoot, "outputs", name), "utf-8");
+    return output;
   } catch {
     return undefined;
   }
@@ -34,9 +34,9 @@ async function saveOutput(name: string, content: string) {
 }
 
 async function testScenario(name: string) {
-  const content = await readFile(join(scenarioRoot, "inputs", name));
+  const content = await readFile(join(scenarioRoot, "inputs", name), "utf-8");
   const output = await getOutput(name);
-  const formatted = format(content.toString());
+  const formatted = format(content);
   if (!output) {
     return await saveOutput(name, formatted);
   }

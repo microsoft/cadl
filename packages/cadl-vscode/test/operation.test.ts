@@ -65,13 +65,13 @@ describe("vscode: tmlanguage: Operations", () => {
       Token.identifiers.functionName("foo"),
       Token.punctuation.openParen,
 
-      Token.identifiers.functionName("path"),
+      Token.identifiers.tag("@path"),
       Token.identifiers.variable("param1"),
       Token.operators.typeAnnotation,
       Token.identifiers.type("string"),
       Token.punctuation.comma,
 
-      Token.identifiers.functionName("query"),
+      Token.identifiers.tag("@query"),
       Token.identifiers.variable("param2"),
       Token.operators.optional,
       Token.operators.typeAnnotation,

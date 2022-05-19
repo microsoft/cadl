@@ -11,6 +11,8 @@ export interface CompilerOptions {
   watchForChanges?: boolean;
   serviceCodePath?: string;
   diagnosticLevel?: LogLevel;
+  warningAsError?: boolean;
+
   /**
    * When true, indicates that a compilation is being performed for live
    * analysis in the language server.

@@ -2,6 +2,40 @@
   "name": "@cadl-lang/versioning",
   "entries": [
     {
+      "version": "0.5.0",
+      "tag": "@cadl-lang/versioning_v0.5.0",
+      "date": "Fri, 06 May 2022 17:19:57 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Uptake `mixes` -> `extends` rename"
+          },
+          {
+            "comment": "Fix issues with spreading versioned model"
+          },
+          {
+            "comment": "Remove node 14 support"
+          },
+          {
+            "comment": "Updated versioning data getter to return `undefined` instead of `-1`"
+          }
+        ],
+        "patch": [
+          {
+            "comment": "Fix issue with versioning of operation parameters in interfaces"
+          },
+          {
+            "comment": "Fix: Using versioned lib validation false positive with interfaces and unions"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@cadl-lang/compiler\" from `~0.30.0` to `~0.31.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.4.0",
       "tag": "@cadl-lang/versioning_v0.4.0",
       "date": "Thu, 31 Mar 2022 17:10:49 GMT",

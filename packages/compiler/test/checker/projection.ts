@@ -23,6 +23,35 @@ describe("cadl: projections", () => {
     testHost = await createTestHost();
   });
 
+  it("projects nested namespaces", async () => {
+    const code = `
+     namespace Bar.Baz;
+     @test model Foo {
+       a: string;
+       b: int32;
+     }
+
+     #suppress "projections-are-experimental"
+     projection Foo#v {
+        to(version) {
+          if version <= 1 {
+            self::deleteProperty("a");
+          };
+
+          if version <= 2 {
+            self::deleteProperty("b");
+          };
+        }
+      }
+     `;
+    const result = (await testProjection(code, [projection("v", 1)])) as ModelType;
+    strictEqual(
+      result.namespace?.namespace?.name,
+      "Bar",
+      "Projections do not preserve Namespace parent relationships."
+    );
+  });
+
   it("takes parameters", async () => {
     const code = `
       @test model Foo {
@@ -474,7 +503,7 @@ describe("cadl: projections", () => {
         `
       );
       const { Foo } = (await testHost.compile("main.cadl")) as { Foo: OperationType };
-      const result = testHost.program.checker!.project(Foo, Foo.projections[0].to!) as ModelType;
+      const result = testHost.program.checker.project(Foo, Foo.projections[0].to!) as ModelType;
       strictEqual(result.properties.get("x")!.type.kind, "Model");
       strictEqual(result.properties.get("y")!.type.kind, "Intrinsic");
     });

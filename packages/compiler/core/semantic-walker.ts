@@ -253,30 +253,15 @@ function navigateType(
   }
 }
 
-function isTemplate(model: ModelType) {
+/**
+ * Resolve if the model is a template type(Non initialized template type).
+ */
+export function isTemplate(model: ModelType): boolean {
   return (
     model.node.kind === SyntaxKind.ModelStatement &&
     model.node.templateParameters.length > 0 &&
     !model.templateArguments?.length
   );
-}
-
-// Produce a map from models in a program (with children) to their children. Model templates are not included.
-export function mapChildModels(program: Program): ReadonlyMap<ModelType, readonly ModelType[]> {
-  const map = new Map<ModelType, ModelType[]>();
-  navigateProgram(program, {
-    model: (model) => {
-      if (model.baseModel && !isTemplate(model) && !isTemplate(model.baseModel)) {
-        const children = map.get(model.baseModel);
-        if (children) {
-          children.push(model);
-        } else {
-          map.set(model.baseModel, [model]);
-        }
-      }
-    },
-  });
-  return map;
 }
 
 // Return property from type, nesting into baseTypes as needed.

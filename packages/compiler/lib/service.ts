@@ -142,13 +142,13 @@ export function getServiceVersion(program: Program): string {
 
 export function getServiceNamespace(program: Program): NamespaceType | undefined {
   const serviceDetails = getServiceDetails(program);
-  return serviceDetails.namespace ?? program.checker!.getGlobalNamespaceType();
+  return serviceDetails.namespace ?? program.checker.getGlobalNamespaceType();
 }
 
 export function getServiceNamespaceString(program: Program): string | undefined {
   const serviceDetails = getServiceDetails(program);
   return (
-    (serviceDetails.namespace && program.checker!.getNamespaceString(serviceDetails.namespace)) ||
+    (serviceDetails.namespace && program.checker.getNamespaceString(serviceDetails.namespace)) ||
     undefined
   );
 }

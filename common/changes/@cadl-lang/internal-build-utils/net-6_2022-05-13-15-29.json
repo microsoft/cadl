@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@cadl-lang/internal-build-utils",
+      "comment": "Dotnet tools allow enforcing dotnet as a requirement and make skipping optional",
+      "type": "minor"
+    },
+    {
+      "packageName": "@cadl-lang/internal-build-utils",
+      "comment": "Bump minimum dotnet version to dotnet6.0",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@cadl-lang/internal-build-utils"
+}

@@ -10,6 +10,7 @@ import {
   validateDecoratorTarget,
 } from "@cadl-lang/compiler";
 import { reportDiagnostic } from "./lib.js";
+
 const addedOnKey = Symbol("addedOn");
 const removedOnKey = Symbol("removedOn");
 const versionsKey = Symbol("versions");
@@ -80,21 +81,39 @@ export function $madeOptional({ program }: DecoratorContext, t: Type, v: string)
   program.stateMap(madeOptionalKey).set(t, v);
 }
 
-export function getRenamedFromVersion(p: Program, t: Type) {
-  return p.stateMap(renamedFromKey).get(t)?.v ?? -1;
-}
-export function getRenamedFromOldName(p: Program, t: Type) {
-  return p.stateMap(renamedFromKey).get(t)?.oldName ?? "";
-}
-export function getAddedOn(p: Program, t: Type) {
-  return p.stateMap(addedOnKey).get(t) ?? -1;
-}
-export function getRemovedOn(p: Program, t: Type) {
-  return p.stateMap(removedOnKey).get(t) ?? Infinity;
+/**
+ * @returns version when the given type was added if applicable.
+ */
+export function getRenamedFromVersion(p: Program, t: Type): string | undefined {
+  return p.stateMap(renamedFromKey).get(t)?.v;
 }
 
-export function getMadeOptionalOn(p: Program, t: Type) {
-  return p.stateMap(madeOptionalKey).get(t) ?? -1;
+/**
+ * @returns get old renamed name if applicable.
+ */
+export function getRenamedFromOldName(p: Program, t: Type): string {
+  return p.stateMap(renamedFromKey).get(t)?.oldName ?? "";
+}
+
+/**
+ * @returns version when the given type was added if applicable.
+ */
+export function getAddedOn(p: Program, t: Type): string | undefined {
+  return p.stateMap(addedOnKey).get(t);
+}
+
+/**
+ * @returns version when the given type was removed if applicable.
+ */
+export function getRemovedOn(p: Program, t: Type): string | undefined {
+  return p.stateMap(removedOnKey).get(t);
+}
+
+/**
+ * @returns version when the given type was made optional if applicable.
+ */
+export function getMadeOptionalOn(p: Program, t: Type): string | undefined {
+  return p.stateMap(madeOptionalKey).get(t);
 }
 
 export function $versioned({ program }: DecoratorContext, t: Type, v: Type) {
@@ -125,7 +144,7 @@ export function $versioned({ program }: DecoratorContext, t: Type, v: Type) {
   program.stateMap(versionsKey).set(t, versions);
 }
 
-function getVersion(p: Program, t: Type) {
+function getVersion(p: Program, t: Type): string[] {
   return p.stateMap(versionsKey).get(t);
 }
 
@@ -230,7 +249,7 @@ export function $onValidate(program: Program) {
           if (!(value instanceof Map)) {
             reportDiagnostic(program, {
               code: "versioned-dependency-record-not-model",
-              format: { dependency: program.checker!.getNamespaceString(dependencyNs) },
+              format: { dependency: program.checker.getNamespaceString(dependencyNs) },
               target: namespace,
             });
           }
@@ -238,7 +257,7 @@ export function $onValidate(program: Program) {
           if (typeof value !== "string") {
             reportDiagnostic(program, {
               code: "versioned-dependency-not-string",
-              format: { dependency: program.checker!.getNamespaceString(dependencyNs) },
+              format: { dependency: program.checker.getNamespaceString(dependencyNs) },
               target: namespace,
             });
           }
@@ -262,8 +281,8 @@ function validateVersionedNamespaceUsage(
         reportDiagnostic(program, {
           code: "using-versioned-library",
           format: {
-            sourceNs: program.checker!.getNamespaceString(source),
-            targetNs: program.checker!.getNamespaceString(target),
+            sourceNs: program.checker.getNamespaceString(source),
+            targetNs: program.checker.getNamespaceString(target),
           },
           target: source ?? NoTarget,
         });
@@ -272,76 +291,111 @@ function validateVersionedNamespaceUsage(
   }
 }
 
-interface VersionRecord {
-  version: string | undefined;
-  projections: ProjectionApplication[];
+export interface VersionResolution {
+  /**
+   * Version for the root namespace. `undefined` if not versioned.
+   */
+  rootVersion: string | undefined;
+
+  /**
+   * Resolved version for all the referenced namespaces.
+   */
+  versions: Map<NamespaceType, string>;
 }
 
-export function getVersionRecords(program: Program, rootNs: NamespaceType): VersionRecord[] {
-  const versions = getVersions(program, rootNs);
-  const records: VersionRecord[] = [];
+/**
+ * Resolve the version to use for all namespace for each of the root namespace versions.
+ * @param program
+ * @param rootNs Root namespace.
+ */
+export function resolveVersions(program: Program, rootNs: NamespaceType): VersionResolution[] {
+  const [, versions] = getVersions(program, rootNs);
   const dependencies = getVersionDependencies(program, rootNs) ?? new Map();
-
   if (!versions || versions.length === 0) {
     if (dependencies.size === 0) {
-      return [{ version: undefined, projections: [] }];
+      return [{ rootVersion: undefined, versions: new Map() }];
     } else {
+      const map = new Map();
       for (const [dependencyNs, version] of dependencies) {
         if (typeof version !== "string") {
-          const rootNsName = program.checker!.getNamespaceString(rootNs);
-          const dependencyNsName = program.checker!.getNamespaceString(dependencyNs);
+          const rootNsName = program.checker.getNamespaceString(rootNs);
+          const dependencyNsName = program.checker.getNamespaceString(dependencyNs);
           throw new Error(
             `Unexpected error: Namespace ${rootNsName} version dependency to ${dependencyNsName} should be a string.`
           );
         }
-
-        records.push({
-          version: undefined,
-          projections: [
-            {
-              scope: dependencyNs,
-              projectionName: "v",
-              arguments: [version],
-            },
-          ],
-        });
+        map.set(dependencyNs, version);
       }
+      return [{ rootVersion: undefined, versions: map }];
     }
   } else {
-    for (const version of versions) {
-      // TODO: find versioned dependencies
-      const projections = [{ scope: rootNs, projectionName: "v", arguments: [version] }];
+    return versions.map((version) => {
+      const resolution: VersionResolution = {
+        rootVersion: version,
+        versions: new Map<NamespaceType, string>(),
+      };
+      resolution.versions.set(rootNs, version);
 
       for (const [dependencyNs, versionMap] of dependencies) {
         if (!(versionMap instanceof Map)) {
-          const rootNsName = program.checker!.getNamespaceString(rootNs);
-          const dependencyNsName = program.checker!.getNamespaceString(dependencyNs);
+          const rootNsName = program.checker.getNamespaceString(rootNs);
+          const dependencyNsName = program.checker.getNamespaceString(dependencyNs);
           throw new Error(
             `Unexpected error: Namespace ${rootNsName} version dependency to ${dependencyNsName} should be a mapping of version.`
           );
         }
-        if (!versionMap.has(version)) continue;
-        projections.push({
-          scope: dependencyNs,
-          projectionName: "v",
-          arguments: [versionMap.get(version!)],
-        });
+        resolution.versions.set(dependencyNs, versionMap.get(version));
       }
 
-      records.push({ version: version, projections });
-    }
+      return resolution;
+    });
   }
-
-  return records;
 }
 
-const versionCache = new WeakMap<Type, string[]>();
-function cacheVersion(key: Type, versions: string[]) {
+/**
+ * Represent the set of projections used to project to that version.
+ */
+interface VersionProjections {
+  version: string | undefined;
+  projections: ProjectionApplication[];
+}
+
+const versionIndex = new Map<string, Map<NamespaceType, string>>();
+
+function indexVersions(resolutions: VersionResolution[]) {
+  versionIndex.clear();
+  for (const resolution of resolutions) {
+    for (const version of resolution.versions.values()) {
+      versionIndex.set(version, resolution.versions);
+    }
+  }
+}
+
+export function buildVersionProjections(
+  program: Program,
+  rootNs: NamespaceType
+): VersionProjections[] {
+  const resolutions = resolveVersions(program, rootNs);
+  indexVersions(resolutions);
+  return resolutions.map((resolution) => {
+    const projections = [...resolution.versions.entries()].map(([ns, version]) => {
+      return {
+        scope: ns,
+        projectionName: "v",
+        arguments: [version],
+      };
+    });
+    return { version: resolution.rootVersion, projections };
+  });
+}
+
+const versionCache = new WeakMap<Type, [NamespaceType, string[]] | []>();
+function cacheVersion(key: Type, versions: [NamespaceType, string[]] | []) {
   versionCache.set(key, versions);
   return versions;
 }
 
-export function getVersions(p: Program, t: Type): string[] {
+export function getVersions(p: Program, t: Type): [NamespaceType, string[]] | [] {
   if (versionCache.has(t)) {
     return versionCache.get(t)!;
   }
@@ -350,11 +404,11 @@ export function getVersions(p: Program, t: Type): string[] {
     const nsVersion = getVersion(p, t);
 
     if (nsVersion !== undefined) {
-      return cacheVersion(t, nsVersion);
+      return cacheVersion(t, [t, nsVersion]);
     } else if (t.namespace) {
       return cacheVersion(t, getVersions(p, t.namespace));
     } else {
-      return cacheVersion(t, []);
+      return cacheVersion(t, [t, []]);
     }
   } else if (
     t.kind === "Operation" ||
@@ -367,6 +421,14 @@ export function getVersions(p: Program, t: Type): string[] {
       return cacheVersion(t, getVersions(p, t.namespace) || []);
     } else if (t.kind === "Operation" && t.interface) {
       return cacheVersion(t, getVersions(p, t.interface) || []);
+    } else {
+      return cacheVersion(t, []);
+    }
+  } else if (t.kind === "ModelProperty") {
+    if (t.sourceProperty) {
+      return getVersions(p, t.sourceProperty);
+    } else if (t.model) {
+      return getVersions(p, t.model);
     } else {
       return cacheVersion(t, []);
     }
@@ -402,27 +464,37 @@ export function madeOptionalAfter(p: Program, type: Type, version: string, versi
  * on whether the change is active or not at that particular version
  */
 function appliesAtVersion(
-  getMetadataFn: (p: Program, t: Type) => string,
+  getMetadataFn: (p: Program, t: Type) => string | undefined,
   p: Program,
   type: Type,
   version: string,
   versionSource?: Type
 ) {
-  const versions = getVersions(p, versionSource ?? type);
+  const [namespace, versions] = getVersions(p, versionSource ?? type);
+  if (namespace) {
+    const newVersion = versionIndex.get(version)?.get(namespace);
+    if (newVersion) {
+      version = newVersion;
+    }
+  }
   if (!versions || versions.length === 0) {
     return null;
   }
+
   const appliedOnVersion = getMetadataFn(p, type);
+  if (appliedOnVersion === undefined) {
+    return null;
+  }
   const appliedOnVersionIndex = versions.indexOf(appliedOnVersion);
   if (appliedOnVersionIndex === -1) return null;
+
   const testVersionIndex = versions.indexOf(version);
   if (testVersionIndex === -1) return null;
-
   return testVersionIndex >= appliedOnVersionIndex;
 }
 
 export function versionCompare(p: Program, versionSource: Type, v1: string, v2: string): number {
-  const versions = getVersions(p, versionSource);
+  const [, versions] = getVersions(p, versionSource);
   if (!versions || versions.length === 0) {
     return 0;
   }
@@ -435,7 +507,7 @@ export function versionCompare(p: Program, versionSource: Type, v1: string, v2: 
 }
 
 export function hasVersion(p: Program, t: Type, v: string) {
-  const versions = getVersions(p, t);
+  const [, versions] = getVersions(p, t);
   if (!versions) return false;
   return versions.includes(v);
 }

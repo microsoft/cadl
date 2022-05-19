@@ -60,19 +60,25 @@ IdentifierStart :
 // http://www.unicode.org/reports/tr31/#R2 
 //
 // The profile adds Pattern_Syntax code points outside the ASCII range, and
-// removes unassigned code points. Unassigned code points are removed to
-// ensure identifier normalization remains stable across versions of
-// Unicode. Non-ASCII Pattern_Syntax characters are added as reserving
-// ASCII characters for future punctuation in the language is sufficient and
-// users may wish to use some of the Non-ASCII Pattern_Syntax characters in
-// identifiers.
+// removes unassigned code points and 0xFFD (REPLACEMENT CHARACTER). 
+//
+// Unassigned code points are removed to ensure identifier normalization remains 
+// stable across versions of Unicode.
+//
+// Non-ASCII Pattern_Syntax characters are added as reserving ASCII characters
+// for future punctuation in the language is sufficient and users may wish to
+// use some of the Non-ASCII Pattern_Syntax characters in identifiers.
+//
+// 0xFFFD (REPLACEMENT CHARACTER) is removed to prevent its inadvertent 
+// substitution from becoming part of a valid identifier.
 ///
+
 IdentifierContinue :
     AsciiLetter
     DecimalDigit
     `$`
     `_`
-    > any assigned Unicode code point greater than U+007F that does not have any of the following property values: General_Category=Surrogate, Control or Private_Use, Noncharacter_Code_Point=True, or Pattern_White_Space=True
+    > any assigned Unicode code point other than U+FFFD greater than U+007F that does not have any of the following property values: General_Category=Surrogate, Control or Private_Use, Noncharacter_Code_Point=True, or Pattern_White_Space=True
 
 AsciiLetter : one of
     `A` `B` `C` `D` `E` `F` `G` `H` `I` `J` `K` `L` `M` `N` `O` `P` `Q` `R` `S` `T` `U` `V` `W` `X` `Y` `Z`
@@ -304,7 +310,7 @@ InterfaceStatement :
     `interface` Identifier TemplateParameters? InterfaceHeritage? `{` InterfaceBody? `}`
 
 InterfaceHeritage :
-    `mixes` ReferenceExpressionList;
+    `extends` ReferenceExpressionList;
 
 InterfaceBody
     InterfaceMemberList `;`?
@@ -428,7 +434,7 @@ ModelExpression :
     `{` ModelBody? `}`
 
 TupleExpression :
-    `[` ExpressionList `]`
+    `[` ExpressionList? `]`
 
 ExpressionList :
     Expression
@@ -576,7 +582,7 @@ ProjectionModelSpreadProperty :
     `...` ProjectionExpression
 
 ProjectionTupleExpression :
-    `[` ProjectionExpressionList `]`
+    `[` ProjectionExpressionList? `]`
 
 ProjectionLambdaExpression :
     CoverProjectionParenthesizedExpressionAndLambdaParameterList `=>` ProjectionBlockExpression

@@ -1,6 +1,47 @@
 # Change Log - @cadl-lang/compiler
 
-This log was last generated on Thu, 31 Mar 2022 17:10:49 GMT and should not be manually modified.
+This log was last generated on Fri, 06 May 2022 17:19:57 GMT and should not be manually modified.
+
+## 0.31.0
+Fri, 06 May 2022 17:19:57 GMT
+
+### Minor changes
+
+- Prompt on cadl vs install if multiple versions of VS are installed
+- Improve module resolution logic to allow compiling a cadl library
+- Add code preview and coloring for diagnostics.
+- Add ability to import library or emitter defined in parent folder. Adds the ability to use the actual emitter name in a samples folder of that emitter
+- Formatter has ability to ignore patterns
+- Formatter: remove quotes in model properties when not needed
+- Add library loading debug logging
+- Include manifest with version and commit
+- Rename `mixes` to `extends` for interfaces
+- Include reference from parent model to all children
+- Cli: Add `--no-emit` flag configuring the `noEmit` compilerOption
+- Add `warn-as-error` flag to cli that will return non zero exit code when there is a warning
+- Add find references and rename support to language server
+- Add goto definition of namespaces, usings, and decorators to language server
+- Export `isTemplate` helper method
+- Add namespace to model expressions
+- Make Program.checker required
+- Added formatting to a few more missing syntax(`array`, `tuple`, `template parameters`)
+- Add OmitProperties type and @withoutOmittedProperties decorator
+- Remove node 14 support
+- Log PID and timestamps in language server
+- Update to Unicode 14.0 and disallow U+FFFD
+- Add option to Checker.getTypeName to filter namespaces
+
+### Patches
+
+- Improve tests for doc decorator
+- Add workaround for npx bug causing issue with backslash in cli on windows
+- Do not validate default assignment when property type is an error type. Prevent additional unrelated error to the original problem with the property type.
+- Fix projection bug setting the namespace of operation with the interface
+- Fix logger levels
+- Fix issue with using model in template default
+- Give a helpful error when code is missing from path
+- Don't complete decorator names in type reference position
+- Preserve namespace nesting in versioning projections
 
 ## 0.30.0
 Thu, 31 Mar 2022 17:10:49 GMT

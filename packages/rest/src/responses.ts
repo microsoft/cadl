@@ -94,7 +94,10 @@ function processResponseType(
         const allProperties = (p: ModelType): ModelTypeProperty[] => {
           return [...p.properties.values(), ...(p.baseModel ? allProperties(p.baseModel) : [])];
         };
-        if (allProperties(responseModel).some((p) => !isResponseMetadata(p))) {
+        if (
+          allProperties(responseModel).some((p) => !isResponseMetadata(p)) ||
+          responseModel.derivedModels.length > 0
+        ) {
           bodyModel = responseModel;
         }
       }

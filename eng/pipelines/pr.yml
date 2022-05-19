@@ -6,21 +6,21 @@ jobs:
   - job: Build_And_Test
     strategy:
       matrix:
-        "Linux - Node 14.x":
-          imageName: ubuntu-latest
-          nodeVersion: "14.x"
-
         "Linux - Node 16.x":
           imageName: ubuntu-latest
           nodeVersion: "16.x"
 
-        "Windows - Node 14.x":
-          imageName: windows-2019
-          nodeVersion: "14.x"
-
         "Windows - Node 16.x":
-          imageName: windows-2019
+          imageName: windows-latest
           nodeVersion: "16.x"
+
+        "Linux - Node 18.x":
+          imageName: ubuntu-latest
+          nodeVersion: "18.x"
+
+        "Windows - Node 18.x":
+          imageName: windows-latest
+          nodeVersion: "18.x"
 
     pool:
       vmImage: $(imageName)
@@ -28,11 +28,18 @@ jobs:
     steps:
       - script: echo '##vso[task.setvariable variable=CADL_VS_CI_BUILD;]true'
         displayName: Enable official Visual Studio extension build
-        condition: eq(variables.imageName, 'windows-2019')
+        condition: eq(variables.imageName, 'windows-latest')
 
       - template: pull-request-common.yml
         parameters:
           nodeVersion: $(nodeVersion)
+
+  - job: docker_build
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+      - script: docker build -f ./docker/Dockerfile .
+        displayName: Docker build
 
   - job: Consistency_Check
     pool:

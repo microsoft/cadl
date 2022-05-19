@@ -1,7 +1,10 @@
+import { ok } from "assert";
 import { pathToFileURL } from "url";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { Diagnostic } from "vscode-languageserver/node.js";
-import { createServer, Server, ServerHost } from "../../server/serverlib.js";
+import { parse, visitChildren } from "../../core/parser.js";
+import { IdentifierNode, SyntaxKind } from "../../core/types.js";
+import { createServer, Server, ServerHost } from "../../server/index.js";
 import {
   createTestFileSystem,
   resolveVirtualPath,
@@ -23,6 +26,8 @@ export async function createTestServerHost(): Promise<TestServerHost> {
   const diagnostics = new Map<string, Diagnostic[]>();
   const logMessages: string[] = [];
   const fileSystem = await createTestFileSystem();
+  // We don't add the @test decorator for server tests
+  fileSystem.compilerHost.getLibDirs = () => [".cadl/lib"];
   await fileSystem.addCadlLibrary(StandardTestLibrary);
 
   const serverHost: TestServerHost = {
@@ -72,4 +77,34 @@ export async function createTestServerHost(): Promise<TestServerHost> {
   server.initialized({});
   serverHost.server = server;
   return serverHost;
+}
+
+/**
+ * Takes source code with a cursor position indicated by `┆`, removes the
+ * `┆` and returns the source without the `┆` and the numeric cursor
+ * position.
+ */
+export function extractCursor(sourceWithCursor: string): { source: string; pos: number } {
+  const pos = sourceWithCursor.indexOf("┆");
+  ok(pos >= 0, "no cursor found");
+  const source = sourceWithCursor.replace("┆", "");
+  return { source, pos };
+}
+
+/**
+ * Extracts all identifiers marked with trailing empty comments from source
+ */
+export function getTestIdentifiers(source: string): IdentifierNode[] {
+  const identifiers: IdentifierNode[] = [];
+  const ast = parse(source);
+  visitChildren(ast, function visit(node) {
+    if (node.kind === SyntaxKind.Identifier) {
+      if (source.substring(node.end, node.end + "/**/".length) === "/**/") {
+        identifiers.push(node);
+      }
+    }
+    visitChildren(node, visit);
+  });
+  identifiers.sort((x, y) => x.pos - y.pos);
+  return identifiers;
 }

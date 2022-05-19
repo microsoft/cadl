@@ -1,70 +1,75 @@
-import { readFileSync } from "fs";
-import { join } from "path";
-import { repoRoot, run } from "../../../eng/scripts/helpers.js";
+// @ts-check
+import {
+  ensureDotnetVersion,
+  getVisualStudioMsBuildPath,
+  run,
+  runDotnet,
+} from "@cadl-lang/internal-build-utils";
+import { readFile } from "fs/promises";
+import { dirname, join, resolve } from "path";
+import { fileURLToPath } from "url";
 
-if (process.platform !== "win32") {
-  console.log("Skipping cadl-vs build: not on Windows.");
-  process.exit(0);
-}
-
-if (process.env.CADL_SKIP_VS_BUILD) {
-  console.log("Skipping cadl-vs build: CADL_SKIP_VS_BUILD is set.");
-  process.exit(0);
-}
-
-const vswhere = join(
-  process.env["ProgramFiles(x86)"],
-  "Microsoft Visual Studio/Installer/vswhere.exe"
-);
-
-const vsMinimumVersion = "16.9";
-const vswhereArgs = [
-  "-latest",
-  "-prerelease",
-  "-version",
-  `[${vsMinimumVersion},`,
-  "-property",
-  "installationPath",
-];
-
-let proc = run(vswhere, vswhereArgs, {
-  ignoreCommandNotFound: true,
-  throwOnNonZeroExit: false,
-  encoding: "utf-8",
-  stdio: [null, "pipe", "inherit"],
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
 });
 
-if (proc.status != 0 || proc.error || !proc.stdout) {
-  const message = `Visual Studio ${vsMinimumVersion} or later not found`;
-  if (process.env.CADL_VS_CI_BUILD) {
-    // In official build on Windows, it's an error if VS is not found.
-    console.error(`error: ${message}`);
-    process.exit(1);
-  } else {
-    console.log(`Skipping cadl-vs build: ${message}.`);
+async function main() {
+  if (process.env.CADL_SKIP_VS_BUILD) {
+    console.log("CADL_SKIP_VS_BUILD is set, skipping build.");
     process.exit(0);
+  }
+
+  const pkgRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+  const file = await readFile(join(pkgRoot, "package.json"), "utf-8");
+  const version = JSON.parse(file).version;
+
+  const result = await getBuildTool();
+  if (result.type === "dotnet") {
+    await ensureDotnetVersion({ exitIfError: true });
+    await runDotnet(["build", "--configuration", "Release", `-p:Version=${version}`], {
+      cwd: pkgRoot,
+    });
+  } else {
+    await buildWithMsbuild(result.path, pkgRoot, version);
   }
 }
 
-const dir = join(repoRoot, "packages/cadl-vs");
-const version = JSON.parse(readFileSync(join(dir, "package.json"))).version;
-const msbuild = join(proc.stdout.trim(), "MSBuild/Current/Bin/MSBuild.exe");
-const msbuildArgs = [
-  "/m",
-  "/v:m",
-  "/noAutoRsp",
-  "/p:Configuration=Release",
-  `/p:Version=${version}`,
-];
+async function buildWithMsbuild(msbuildPath, pkgRoot, version) {
+  const msbuildArgs = [
+    "/m",
+    "/v:m",
+    "/noAutoRsp",
+    "/p:Configuration=Release",
+    `/p:Version=${version}`,
+  ];
 
-if (process.argv[2] === "--restore") {
-  // In official builds, restore is run in a separate invocation for better build telemetry.
-  msbuildArgs.push("/target:restore");
-} else if (!process.env.CADL_VS_CI_BUILD) {
-  // In developer builds, restore on every build
-  msbuildArgs.push("/restore");
+  if (!process.env.CADL_VS_CI_BUILD) {
+    // In developer builds, restore on every build
+    msbuildArgs.push("/restore");
+  }
+  msbuildArgs.push(join(pkgRoot, "Microsoft.Cadl.VS.sln"));
+  const result = await run(msbuildPath, msbuildArgs, { throwOnNonZeroExit: false });
+  process.exit(result.exitCode ?? 1);
 }
 
-msbuildArgs.push(join(dir, "Microsoft.Cadl.VS.sln"));
-proc = run(msbuild, msbuildArgs, { throwOnNonZeroExit: false });
-process.exit(proc.status ?? 1);
+async function getBuildTool() {
+  if (process.platform !== "win32") {
+    console.log("Not on windows using 'dotnet' to build");
+    return { type: "dotnet" };
+  }
+
+  const result = await getVisualStudioMsBuildPath();
+  if ("path" in result) {
+    return { type: "msbuild", path: result.path };
+  } else {
+    if (process.env.CADL_VS_CI_BUILD) {
+      // In official build on Windows, it's an error if VS is not found.
+      console.error(`error: ${result.error}`);
+      process.exit(1);
+    } else {
+      console.log(`Msbuild not found. Using 'dotnet' to build cadl-vs`);
+      return { type: "dotnet" };
+    }
+  }
+}

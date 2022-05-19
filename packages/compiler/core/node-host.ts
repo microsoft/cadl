@@ -1,10 +1,9 @@
-import { readFileSync } from "fs";
 import { readdir, readFile, realpath, rmdir, stat, writeFile } from "fs/promises";
 import mkdirp from "mkdirp";
 import fetch from "node-fetch";
 import { fileURLToPath, pathToFileURL } from "url";
 import { createSourceFile } from "./diagnostics.js";
-import { createConsoleSink } from "./logger.js";
+import { createConsoleSink } from "./logger/index.js";
 import { joinPaths, resolvePath } from "./path-utils.js";
 import { CompilerHost, RemoveDirOptions } from "./types";
 
@@ -41,11 +40,3 @@ export const NodeHost: CompilerHost = {
     return pathToFileURL(path).href;
   },
 };
-
-export const cadlVersion = getVersion();
-
-function getVersion(): string {
-  const packageJsonPath = fileURLToPath(new URL("../../package.json", import.meta.url).href);
-  const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
-  return packageJson.version;
-}

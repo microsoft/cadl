@@ -1,8 +1,8 @@
+// @ts-check
+import { runWatch } from "@cadl-lang/internal-build-utils";
 import ecmarkup from "ecmarkup";
 import { readFile, writeFile } from "fs/promises";
 import { resolve } from "path";
-import watch from "watch";
-import { runWatch } from "../../../eng/scripts/helpers.js";
 
 async function build() {
   const infile = resolve("src/spec.emu.html");
@@ -31,4 +31,4 @@ async function build() {
   }
 }
 
-runWatch(watch, "src", build);
+runWatch("src", build);

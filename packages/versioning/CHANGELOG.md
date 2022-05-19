@@ -1,6 +1,21 @@
 # Change Log - @cadl-lang/versioning
 
-This log was last generated on Thu, 31 Mar 2022 17:10:49 GMT and should not be manually modified.
+This log was last generated on Fri, 06 May 2022 17:19:57 GMT and should not be manually modified.
+
+## 0.5.0
+Fri, 06 May 2022 17:19:57 GMT
+
+### Minor changes
+
+- Uptake `mixes` -> `extends` rename
+- Fix issues with spreading versioned model
+- Remove node 14 support
+- Updated versioning data getter to return `undefined` instead of `-1`
+
+### Patches
+
+- Fix issue with versioning of operation parameters in interfaces
+- Fix: Using versioned lib validation false positive with interfaces and unions
 
 ## 0.4.0
 Thu, 31 Mar 2022 17:10:49 GMT

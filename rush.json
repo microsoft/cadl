@@ -4,8 +4,8 @@
  */
 {
   "$schema": "https://developer.microsoft.com/json-schemas/rush/v5/rush.schema.json",
-  "rushVersion": "5.62.1",
-  "pnpmVersion": "5.18.10",
+  "rushVersion": "5.66.2",
+  "pnpmVersion": "6.32.9",
   "ensureConsistentVersions": true,
   /**
    * Options that are only used when the PNPM package manager is selected
@@ -13,7 +13,7 @@
   "pnpmOptions": {
     "strictPeerDependencies": true
   },
-  "nodeSupportedVersionRange": ">=14.0.0",
+  "nodeSupportedVersionRange": ">=16.0.0",
   "suppressNodeLtsWarning": true,
   "projectFolderMinDepth": 1,
   "projectFolderMaxDepth": 5,
@@ -97,6 +97,12 @@
       "shouldPublish": true
     },
     {
+      "packageName": "@cadl-lang/internal-build-utils",
+      "projectFolder": "packages/internal-build-utils",
+      "reviewCategory": "production",
+      "shouldPublish": true
+    },
+    {
       "packageName": "@cadl-lang/spec",
       "projectFolder": "packages/spec",
       "reviewCategory": "production",
@@ -135,6 +141,12 @@
     {
       "packageName": "@cadl-lang/playground",
       "projectFolder": "packages/playground",
+      "reviewCategory": "production",
+      "shouldPublish": false
+    },
+    {
+      "packageName": "@cadl-lang/bundler",
+      "projectFolder": "packages/bundler",
       "reviewCategory": "production",
       "shouldPublish": false
     }

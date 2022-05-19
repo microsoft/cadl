@@ -1,15 +1,16 @@
+// @ts-check
+import { run, xplatCmd } from "@cadl-lang/internal-build-utils";
 import { readFileSync } from "fs";
-import { run } from "../../../eng/scripts/helpers.js";
 
-const version = JSON.parse(readFileSync("package.json")).version;
+const version = JSON.parse(readFileSync("package.json", "utf-8")).version;
 const vsix = `cadl-vscode-${version}.vsix`;
 
 const options = {
   ignoreCommandNotFound: true,
   // Code CLI emits node warnings we can't prevent
-  env: { ...process.env, NODE_NO_WARNINGS: 1 },
+  env: { ...process.env, NODE_NO_WARNINGS: "1" },
 };
 
 for (const command of ["code", "code-insiders"]) {
-  run(command, ["--install-extension", vsix], options);
+  await run(xplatCmd(command), ["--install-extension", vsix], options);
 }

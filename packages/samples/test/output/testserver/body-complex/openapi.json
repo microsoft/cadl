@@ -770,7 +770,7 @@
             "type": "integer",
             "format": "int32",
             "nullable": true,
-            "x-cadl-name": "Cadl.int32 | Cadl.null",
+            "x-cadl-name": "int32 | null",
             "description": "Basic Id"
           },
           "name": {
@@ -894,7 +894,7 @@
           "null": {
             "type": "string",
             "nullable": true,
-            "x-cadl-name": "Cadl.string | Cadl.null"
+            "x-cadl-name": "string | null"
           }
         },
         "required": [
@@ -969,7 +969,7 @@
             "items": {
               "type": "string"
             },
-            "x-cadl-name": "Cadl.string[]"
+            "x-cadl-name": "string[]"
           }
         },
         "required": [

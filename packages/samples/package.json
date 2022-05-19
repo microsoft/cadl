@@ -20,7 +20,7 @@
   ],
   "type": "module",
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=16.0.0"
   },
   "scripts": {
     "build": "echo \"nothing to do for samples\"",
@@ -32,13 +32,14 @@
     "!dist/test/**"
   ],
   "dependencies": {
-    "@cadl-lang/versioning": "~0.4.0",
-    "@cadl-lang/compiler": "~0.30.0",
-    "@cadl-lang/rest": "~0.13.0",
-    "@cadl-lang/openapi": "~0.8.0",
-    "@cadl-lang/openapi3": "~0.10.0"
+    "@cadl-lang/versioning": "~0.5.0",
+    "@cadl-lang/compiler": "~0.31.0",
+    "@cadl-lang/rest": "~0.14.0",
+    "@cadl-lang/openapi": "~0.9.0",
+    "@cadl-lang/openapi3": "~0.11.0"
   },
   "devDependencies": {
+    "@cadl-lang/internal-build-utils": "~0.2.0",
     "@types/mkdirp": "~1.0.1",
     "autorest": "~3.3.2",
     "mkdirp": "~1.0.4"

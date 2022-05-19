@@ -2,6 +2,26 @@
   "name": "cadl-vs",
   "entries": [
     {
+      "version": "0.7.0",
+      "tag": "cadl-vs_v0.7.0",
+      "date": "Fri, 06 May 2022 17:19:57 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Remove node 14 support"
+          }
+        ],
+        "dependency": [
+          {
+            "comment": "Updating dependency \"cadl-vscode\" from `~0.13.1` to `~0.14.0`"
+          },
+          {
+            "comment": "Updating dependency \"@cadl-lang/internal-build-utils\" from `~0.1.0` to `~0.2.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.6.2",
       "tag": "cadl-vs_v0.6.2",
       "date": "Thu, 31 Mar 2022 17:10:49 GMT",

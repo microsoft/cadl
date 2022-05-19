@@ -16,7 +16,7 @@ describe("compiler: global namespace", () => {
 
       await testHost.compile("./");
 
-      const globalNamespaceType = testHost.program.checker?.getGlobalNamespaceType();
+      const globalNamespaceType = testHost.program.checker.getGlobalNamespaceType();
       assert(
         globalNamespaceType?.namespaces.get("Foo"),
         "Namespace Foo was added to global namespace type"
@@ -28,7 +28,7 @@ describe("compiler: global namespace", () => {
 
       await testHost.compile("./");
 
-      const globalNamespaceType = testHost.program.checker?.getGlobalNamespaceType();
+      const globalNamespaceType = testHost.program.checker.getGlobalNamespaceType();
       assert(
         globalNamespaceType?.models.get("MyModel"),
         "model MyModel was added to global namespace type"
@@ -40,7 +40,7 @@ describe("compiler: global namespace", () => {
 
       await testHost.compile("./");
 
-      const globalNamespaceType = testHost.program.checker?.getGlobalNamespaceType();
+      const globalNamespaceType = testHost.program.checker.getGlobalNamespaceType();
       assert(
         globalNamespaceType?.operations.get("myOperation"),
         "operation myOperation was added to global namespace type"
@@ -65,7 +65,7 @@ describe("compiler: global namespace", () => {
 
       await testHost.compile("./");
 
-      const globalNamespaceType = testHost.program.checker?.getGlobalNamespaceType();
+      const globalNamespaceType = testHost.program.checker.getGlobalNamespaceType();
       assert(
         globalNamespaceType?.namespaces.get("Foo"),
         "Namespace Foo was added to global namespace type"
@@ -81,7 +81,7 @@ describe("compiler: global namespace", () => {
 
       await testHost.compile("./");
 
-      const globalNamespaceType = testHost.program.checker?.getGlobalNamespaceType();
+      const globalNamespaceType = testHost.program.checker.getGlobalNamespaceType();
       assert(
         globalNamespaceType?.models.get("MyModel"),
         "model MyModel was added to global namespace type"
@@ -93,7 +93,7 @@ describe("compiler: global namespace", () => {
 
       await testHost.compile("./");
 
-      const globalNamespaceType = testHost.program.checker?.getGlobalNamespaceType();
+      const globalNamespaceType = testHost.program.checker.getGlobalNamespaceType();
       assert(
         globalNamespaceType?.operations.get("myOperation"),
         "operation myOperation was added to global namespace type"

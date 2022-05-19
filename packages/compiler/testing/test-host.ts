@@ -1,6 +1,6 @@
 import assert from "assert";
 import { readFile } from "fs/promises";
-import glob from "glob";
+import { globby } from "globby";
 import { fileURLToPath, pathToFileURL } from "url";
 import { createSourceFile, logDiagnostics, logVerboseTestOutput } from "../core/diagnostics.js";
 import { NodeHost } from "../core/node-host.js";
@@ -287,19 +287,8 @@ async function createTestHostInternal(): Promise<TestHost> {
 }
 
 export async function findFilesFromPattern(directory: string, pattern: string): Promise<string[]> {
-  return new Promise((resolve, reject) => {
-    glob(
-      pattern,
-      {
-        cwd: directory,
-        nodir: true,
-      },
-      (err, matches) => {
-        if (err) {
-          reject(err);
-        }
-        resolve(matches);
-      }
-    );
+  return globby(pattern, {
+    cwd: directory,
+    onlyFiles: true,
   });
 }

@@ -2,6 +2,21 @@
   "name": "@cadl-lang/prettier-plugin-cadl",
   "entries": [
     {
+      "version": "0.5.11",
+      "tag": "@cadl-lang/prettier-plugin-cadl_v0.5.11",
+      "date": "Fri, 06 May 2022 17:19:57 GMT",
+      "comments": {
+        "dependency": [
+          {
+            "comment": "Updating dependency \"@cadl-lang/compiler\" from `~0.30.0` to `~0.31.0`"
+          },
+          {
+            "comment": "Updating dependency \"@cadl-lang/internal-build-utils\" from `~0.1.0` to `~0.2.0`"
+          }
+        ]
+      }
+    },
+    {
       "version": "0.5.10",
       "tag": "@cadl-lang/prettier-plugin-cadl_v0.5.10",
       "date": "Thu, 31 Mar 2022 17:10:49 GMT",

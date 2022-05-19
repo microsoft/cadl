@@ -1,4 +1,4 @@
-import { ok, strictEqual } from "assert";
+import { deepStrictEqual, ok, strictEqual } from "assert";
 import { ModelType } from "../../core/index.js";
 import {
   getDoc,
@@ -49,6 +49,80 @@ describe("compiler: built-in decorators", () => {
       strictEqual(getDoc(runner.program, B), "Templated B");
     });
 
+    it("applies @doc on namespace", async () => {
+      const { TestDoc } = await runner.compile(
+        `
+        @test
+        @doc("doc for namespace")
+        namespace TestDoc {
+        }
+        `
+      );
+
+      strictEqual(getDoc(runner.program, TestDoc), "doc for namespace");
+    });
+
+    it("applies @doc on enum", async () => {
+      const { Color, Red } = await runner.compile(
+        `
+        @test
+        @doc("doc for enum")
+        enum Color {
+          @test
+          @doc("doc for enum element")
+          Red: "red",
+        }
+        `
+      );
+
+      strictEqual(getDoc(runner.program, Color), "doc for enum");
+      strictEqual(getDoc(runner.program, Red), "doc for enum element");
+    });
+
+    it("applies @doc on union", async () => {
+      const { AB } = await runner.compile(
+        `
+        model A { }
+        model B { }
+
+        @test
+        @doc("doc for union")
+        union AB { a: A, b: B }
+        `
+      );
+
+      strictEqual(getDoc(runner.program, AB), "doc for union");
+    });
+
+    it("applies @doc on interfaces", async () => {
+      const { TestDoc, a } = await runner.compile(
+        `
+        @test
+        @doc("doc for interface")
+        interface TestDoc {
+          @test
+          @doc("doc for interface operation")
+          a(): string;
+        }
+        `
+      );
+
+      strictEqual(getDoc(runner.program, TestDoc), "doc for interface");
+      strictEqual(getDoc(runner.program, a), "doc for interface operation");
+    });
+
+    it("applies @doc on operations", async () => {
+      const { b } = await runner.compile(
+        `
+        @test
+        @doc("doc for an operation")
+        op b(): string;
+        `
+      );
+
+      strictEqual(getDoc(runner.program, b), "doc for an operation");
+    });
+
     it("emit diagnostic if doc is not a string", async () => {
       const diagnostics = await runner.diagnose(`
         @doc("foo" | "bar")
@@ -63,7 +137,7 @@ describe("compiler: built-in decorators", () => {
   });
 
   describe("@friendlyName", () => {
-    it("applies @doc on model", async () => {
+    it("applies @friendlyName on model", async () => {
       const { A, B, C } = await runner.compile(`
         @test
         @friendlyName("MyNameIsA")
@@ -253,6 +327,43 @@ describe("compiler: built-in decorators", () => {
 
       ok(prop.kind === "ModelProperty", "should be a model property");
       strictEqual(getKeyName(runner.program, prop), "alternateName");
+    });
+  });
+
+  describe("@withoutOmittedProperties", () => {
+    it("removes a model property when given a string literal", async () => {
+      const { TestModel } = await runner.compile(
+        `
+        model OriginalModel {
+          removeMe: string;
+          notMe: string;
+        }
+
+        @test
+        model TestModel is OmitProperties<OriginalModel, "removeMe"> {
+        }`
+      );
+
+      const properties = TestModel.kind === "Model" ? Array.from(TestModel.properties.keys()) : [];
+      deepStrictEqual(properties, ["notMe"]);
+    });
+
+    it("removes model properties when given a union containing strings", async () => {
+      const { TestModel } = await runner.compile(
+        `
+        model OriginalModel {
+          removeMe: string;
+          removeMeToo: string;
+          notMe: string;
+        }
+
+        @test
+        model TestModel is OmitProperties<OriginalModel, "removeMe" | "removeMeToo"> {
+        }`
+      );
+
+      const properties = TestModel.kind === "Model" ? Array.from(TestModel.properties.keys()) : [];
+      deepStrictEqual(properties, ["notMe"]);
     });
   });
 });

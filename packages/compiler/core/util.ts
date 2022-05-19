@@ -3,7 +3,8 @@ import { createDiagnostic } from "./messages.js";
 import { getDirectoryPath, isPathAbsolute, isUrl, joinPaths, resolvePath } from "./path-utils.js";
 import { CompilerHost, Diagnostic, DiagnosticTarget, NoTarget, SourceFile } from "./types.js";
 
-export { cadlVersion, NodeHost } from "./node-host.js";
+export { cadlVersion } from "./manifest.js";
+export { NodeHost } from "./node-host.js";
 
 export function deepFreeze<T>(value: T): T {
   if (Array.isArray(value)) {

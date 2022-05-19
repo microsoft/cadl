@@ -67,6 +67,15 @@ export interface RoutePath {
   isReset: boolean;
 }
 
+/**
+ * `@route` defines the relative route URI for the target operation
+ *
+ * The first argument should be a URI fragment that may contain one or more path parameter fields.
+ * If the namespace or interface that contains the operation is also marked with a `@route` decorator,
+ * it will be used as a prefix to the route URI of the operation.
+ *
+ * `@route` can only be applied to operations, namespaces, and interfaces.
+ */
 export function $route({ program }: DecoratorContext, entity: Type, path: string) {
   setRoute(program, entity, {
     path,
@@ -529,6 +538,14 @@ const resourceOperationToVerb: any = {
 };
 
 const autoRouteKey = Symbol("autoRoute");
+
+/**
+ * `@autoRoute` enables automatic route generation for an operation, namespace, or interface.
+ *
+ * When applied to an operation, it automatically generates the operation's route based on path parameter
+ * metadata.  When applied to a namespace or interface, it causes all operations under that scope to have
+ * auto-generated routes.
+ */
 export function $autoRoute({ program }: DecoratorContext, entity: Type) {
   if (
     !validateDecoratorTarget(program, entity, "@autoRoute", ["Namespace", "Interface", "Operation"])

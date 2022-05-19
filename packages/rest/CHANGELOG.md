@@ -1,6 +1,20 @@
 # Change Log - @cadl-lang/rest
 
-This log was last generated on Thu, 31 Mar 2022 17:10:49 GMT and should not be manually modified.
+This log was last generated on Fri, 06 May 2022 17:19:57 GMT and should not be manually modified.
+
+## 0.14.0
+Fri, 06 May 2022 17:19:57 GMT
+
+### Minor changes
+
+- Add RouteOptions and AutoRouteOptions types to enable customization of automatic route generation when calling getAllRoutes
+- Uptake `mixes` -> `extends` rename
+- Remove node 14 support
+
+### Patches
+
+- Fix issue where empty response model with children would result in 204"
+- Add validation to `Resource` interface to ensure `TError` is an error type
 
 ## 0.13.0
 Thu, 31 Mar 2022 17:10:49 GMT

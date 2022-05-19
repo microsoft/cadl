@@ -1,6 +1,17 @@
 # Change Log - cadl-vscode
 
-This log was last generated on Thu, 31 Mar 2022 17:10:49 GMT and should not be manually modified.
+This log was last generated on Fri, 06 May 2022 17:19:57 GMT and should not be manually modified.
+
+## 0.14.0
+Fri, 06 May 2022 17:19:57 GMT
+
+### Minor changes
+
+- Color decorators differently than operations
+- Uptake `mixes` -> `extends` rename
+- Update `language-configuration.json` to newer format and generate it from cadl language server data
+- Remove node 14 support
+- Add command to restart language server
 
 ## 0.13.1
 Thu, 31 Mar 2022 17:10:49 GMT

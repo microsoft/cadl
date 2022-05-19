@@ -20,7 +20,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Pet"
+                  "$ref": "#/components/schemas/PetBase"
                 }
               }
             }
@@ -67,13 +67,68 @@
       }
     },
     "schemas": {
-      "Pet": {
-        "anyOf": [
-          {
-            "$ref": "#/components/schemas/Cat"
+      "PetBase": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Discriminator property for PetBase."
           },
+          "name": {
+            "type": "string"
+          },
+          "favoriteToys": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Library.PetToy"
+            },
+            "x-cadl-name": "Library.PetToy[]"
+          }
+        },
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "dog": "#/components/schemas/Dog",
+            "cat": "#/components/schemas/Cat"
+          }
+        },
+        "required": [
+          "name",
+          "favoriteToys"
+        ]
+      },
+      "Dog": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "dog"
+            ]
+          },
+          "nextWalkTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "walkerName": {
+            "type": "string"
+          },
+          "commandList": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "x-cadl-name": "string[]"
+          }
+        },
+        "required": [
+          "type",
+          "nextWalkTime",
+          "commandList"
+        ],
+        "allOf": [
           {
-            "$ref": "#/components/schemas/Dog"
+            "$ref": "#/components/schemas/PetBase"
           }
         ]
       },
@@ -99,60 +154,6 @@
           {
             "$ref": "#/components/schemas/PetBase"
           }
-        ]
-      },
-      "Dog": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "dog"
-            ]
-          },
-          "nextWalkTime": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "walkerName": {
-            "type": "string"
-          },
-          "commandList": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "x-cadl-name": "Cadl.string[]"
-          }
-        },
-        "required": [
-          "type",
-          "nextWalkTime",
-          "commandList"
-        ],
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/PetBase"
-          }
-        ]
-      },
-      "PetBase": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "favoriteToys": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Library.PetToy"
-            },
-            "x-cadl-name": "Library.PetToy[]"
-          }
-        },
-        "required": [
-          "name",
-          "favoriteToys"
         ]
       },
       "Library.PetToy": {

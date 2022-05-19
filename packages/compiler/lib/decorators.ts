@@ -55,6 +55,15 @@ function setTemplatedStringProperty(
 }
 
 const summaryKey = Symbol("summary");
+/**
+ * @summary attaches a documentation string. It is typically used to give a short, single-line
+ * description, and can be used in combination with or instead of @doc.
+ *
+ * The first argument to @summary is a string, which may contain template parameters, enclosed in braces,
+ * which are replaced with an attribute for the type (commonly "name") passed as the second (optional) argument.
+ *
+ * @summary can be specified on any language element -- a model, an operation, a namespace, etc.
+ */
 export function $summary(
   { program }: DecoratorContext,
   target: Type,
@@ -69,6 +78,14 @@ export function getSummary(program: Program, type: Type): string | undefined {
 }
 
 const docsKey = Symbol("docs");
+/**
+ * @doc attaches a documentation string. Works great with multi-line string literals.
+ *
+ * The first argument to @doc is a string, which may contain template parameters, enclosed in braces,
+ * which are replaced with an attribute for the type (commonly "name") passed as the second (optional) argument.
+ *
+ * @doc can be specified on any language element -- a model, an operation, a namespace, etc.
+ */
 export function $doc(
   { program }: DecoratorContext,
   target: Type,
@@ -93,7 +110,7 @@ export function $inspectTypeName(program: Program, target: Type, text: string) {
   // eslint-disable-next-line no-console
   if (text) console.log(text);
   // eslint-disable-next-line no-console
-  console.log(program.checker!.getTypeName(target));
+  console.log(program.checker.getTypeName(target));
 }
 
 const intrinsicsKey = Symbol("intrinsics");
@@ -188,6 +205,19 @@ export function isErrorModel(program: Program, target: Type): boolean {
 
 const formatValuesKey = Symbol("formatValues");
 
+/**
+ * `@format` - specify the data format hint for a string type
+ *
+ * The first argument is a string that identifies the format that the string type expects.  Any string
+ * can be entered here, but a Cadl emitter must know how to interpret
+ *
+ * For Cadl specs that will be used with an OpenAPI emitter, the OpenAPI specification describes possible
+ * valid values for a string type's format:
+ *
+ * https://swagger.io/specification/#data-types
+ *
+ * `@format` can be specified on a type that extends from `string` or a `string`-typed model property.
+ */
 export function $format({ program }: DecoratorContext, target: Type, format: string) {
   if (
     !validateDecoratorTarget(program, target, "@format", ["Model", "ModelProperty"]) ||
@@ -404,6 +434,42 @@ export function $withUpdateableProperties({ program }: DecoratorContext, target:
   });
 }
 
+// -- @withoutOmittedProperties decorator ----------------------
+
+export function $withoutOmittedProperties(
+  { program }: DecoratorContext,
+  target: Type,
+  omitProperties: Type
+) {
+  if (omitProperties.kind == "TemplateParameter") {
+    // Silently return because this is a templated type
+    return;
+  }
+
+  if (!validateDecoratorTarget(program, target, "@withoutOmittedProperties", "Model")) {
+    return;
+  }
+
+  if (!validateDecoratorParamType(program, target, omitProperties, ["String", "Union"])) {
+    return;
+  }
+
+  // Get the property or properties to omit
+  const omitNames = new Set<string>();
+  if (omitProperties.kind === "Union") {
+    for (const value of omitProperties.options) {
+      if (value.kind === "String") {
+        omitNames.add(value.value);
+      }
+    }
+  } else {
+    omitNames.add(omitProperties);
+  }
+
+  // Remove all properties to be omitted
+  mapFilterOut(target.properties, (key, _) => omitNames.has(key));
+}
+
 // -- @withoutDefaultValues decorator ----------------------
 
 export function $withoutDefaultValues({ program }: DecoratorContext, target: Type) {
@@ -532,7 +598,13 @@ export function getFriendlyName(program: Program, target: Type): string {
 
 const knownValuesKey = Symbol("knownValues");
 /**
- * Specify the known values for a string type.
+ * `@knownValues` marks a string type with an enum that contains all known values
+ *
+ * The first parameter is a reference to an enum type that describes all possible values that the
+ * type accepts.
+ *
+ * `@knownValues` can only be applied to model types that extend `string`.
+ *
  * @param target Decorator target. Must be a string. (model Foo extends string)
  * @param knownValues Must be an enum.
  */
@@ -601,6 +673,14 @@ export function getKnownValues(
 
 const keyKey = Symbol("key");
 
+/**
+ * `@key` - mark a model property as the key to identify instances of that type
+ *
+ * The optional first argument accepts an alternate key name which may be used by emitters.
+ * Otherwise, the name of the target property will be used.
+ *
+ * `@key` can only be applied to model properties.
+ */
 export function $key({ program }: DecoratorContext, entity: Type, altName?: string): void {
   if (!validateDecoratorTarget(program, entity, "@key", "ModelProperty")) {
     return;

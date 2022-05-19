@@ -1,5 +1,6 @@
-import { match, ok, strictEqual } from "assert";
-import { ModelType, Type } from "../../core/types.js";
+import { deepStrictEqual, match, ok, strictEqual } from "assert";
+import { isTemplate } from "../../core/semantic-walker.js";
+import { ModelType, ModelTypeProperty, Type } from "../../core/types.js";
 import {
   createTestHost,
   expectDiagnosticEmpty,
@@ -99,6 +100,28 @@ describe("compiler: models", () => {
     ]);
   });
 
+  describe("assign default values", () => {
+    const testCases: [string, string, any][] = [
+      ["boolean", `false`, { kind: "Boolean", value: false }],
+      ["boolean", `true`, { kind: "Boolean", value: true }],
+      ["string", `"foo"`, { kind: "String", value: "foo" }],
+      ["int32", `123`, { kind: "Number", value: 123 }],
+    ];
+
+    for (const [type, defaultValue, expectedValue] of testCases) {
+      it(`foo?: ${type} = ${defaultValue}`, async () => {
+        testHost.addCadlFile(
+          "main.cadl",
+          `
+          model A { @test foo?: ${type} = ${defaultValue} }
+          `
+        );
+        const { foo } = (await testHost.compile("main.cadl")) as { foo: ModelTypeProperty };
+        deepStrictEqual({ ...foo.default }, expectedValue);
+      });
+    }
+  });
+
   describe("doesn't allow a default of different type than the property type", () => {
     const testCases: [string, string, RegExp][] = [
       ["string", "123", /Default must be a string/],
@@ -121,6 +144,19 @@ describe("compiler: models", () => {
         match(diagnostics[0].message, errorRegex);
       });
     }
+  });
+
+  it(`doesn't emit unsuported-default diagnostic when type is an error`, async () => {
+    testHost.addCadlFile(
+      "main.cadl",
+      `
+        model A { foo?: bool = false }
+      `
+    );
+    const diagnostics = await testHost.diagnose("main.cadl");
+    expectDiagnostics(diagnostics, [
+      { code: "unknown-identifier", message: "Unknown identifier bool" },
+    ]);
   });
 
   it("provides parent model of properties", async () => {
@@ -196,6 +232,73 @@ describe("compiler: models", () => {
       const diagnostics = await testHost.diagnose("main.cadl");
       strictEqual(diagnostics.length, 1);
       match(diagnostics[0].message, /Model has an inherited property/);
+    });
+
+    it("keeps reference of childrens", async () => {
+      testHost.addCadlFile(
+        "main.cadl",
+        `
+        @test model Pet {
+          name: true;
+        }
+
+        @test model Cat extends Pet {
+          meow: true;
+        }
+
+        @test model Dog extends Pet {
+          bark: true;
+        }
+        `
+      );
+      const { Pet, Dog, Cat } = (await testHost.compile("main.cadl")) as {
+        Pet: ModelType;
+        Dog: ModelType;
+        Cat: ModelType;
+      };
+      ok(Pet.derivedModels);
+      strictEqual(Pet.derivedModels.length, 2);
+      strictEqual(Pet.derivedModels[0], Cat);
+      strictEqual(Pet.derivedModels[1], Dog);
+    });
+
+    it("keeps reference of childrens with templates", async () => {
+      testHost.addCadlFile(
+        "main.cadl",
+        `
+        @test model Pet {
+          name: true;
+        }
+
+        model TPet<T> extends Pet {
+          t: T;
+        }
+
+        @test model Cat is TPet<string> {
+          meow: true;
+        }
+
+        @test model Dog is TPet<string> {
+          bark: true;
+        }
+        `
+      );
+      const { Pet, Dog, Cat } = (await testHost.compile("main.cadl")) as {
+        Pet: ModelType;
+        Dog: ModelType;
+        Cat: ModelType;
+      };
+      strictEqual(Pet.derivedModels.length, 4);
+      strictEqual(Pet.derivedModels[0].name, "TPet");
+      ok(isTemplate(Pet.derivedModels[0]));
+
+      strictEqual(Pet.derivedModels[1].name, "TPet");
+      ok(Pet.derivedModels[1].templateArguments);
+      strictEqual(Pet.derivedModels[1].templateArguments[0].kind, "Model");
+      strictEqual((Pet.derivedModels[1].templateArguments[0] as ModelType).name, "string");
+
+      strictEqual(Pet.derivedModels[2], Cat);
+      strictEqual(Pet.derivedModels[3], Dog);
     });
 
     it("emit error when extends itself", async () => {
@@ -299,6 +402,7 @@ describe("compiler: models", () => {
       );
       const { A, C } = (await testHost.compile("main.cadl")) as { A: ModelType; C: ModelType };
       strictEqual(C.baseModel, A);
+      strictEqual(A.derivedModels[1], C);
     });
 
     it("doesn't allow duplicate properties", async () => {

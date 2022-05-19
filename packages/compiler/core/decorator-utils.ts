@@ -166,7 +166,7 @@ export function validateDecoratorParamType<K extends Type["kind"]>(
 
 function prettyValue(program: Program, value: any) {
   if (typeof value === "object" && value !== null && "kind" in value) {
-    return program.checker!.getTypeName(value);
+    return program.checker.getTypeName(value);
   }
   return value;
 }

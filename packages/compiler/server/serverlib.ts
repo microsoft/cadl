@@ -11,12 +11,17 @@ import {
   InitializeParams,
   InitializeResult,
   Location,
+  PrepareRenameParams,
   PublishDiagnosticsParams,
   Range,
+  ReferenceParams,
+  RenameParams,
   ServerCapabilities,
   TextDocumentChangeEvent,
   TextDocumentIdentifier,
   TextDocumentSyncKind,
+  TextEdit,
+  WorkspaceEdit,
   WorkspaceFolder,
   WorkspaceFoldersChangeEvent,
 } from "vscode-languageserver/node.js";
@@ -28,7 +33,7 @@ import {
   getSourceLocation,
 } from "../core/diagnostics.js";
 import { CompilerOptions } from "../core/options.js";
-import { getNodeAtPosition } from "../core/parser.js";
+import { getNodeAtPosition, visitChildren } from "../core/parser.js";
 import {
   ensureTrailingDirectorySeparator,
   getDirectoryPath,
@@ -37,11 +42,12 @@ import {
 } from "../core/path-utils.js";
 import { createProgram, Program } from "../core/program.js";
 import {
+  CadlScriptNode,
   CompilerHost,
   Diagnostic as CadlDiagnostic,
+  DiagnosticTarget,
   IdentifierNode,
   SourceFile,
-  SourceLocation,
   SymbolFlags,
   SyntaxKind,
   Type,
@@ -63,8 +69,11 @@ export interface Server {
   initialized(params: InitializedParams): void;
   workspaceFoldersChanged(e: WorkspaceFoldersChangeEvent): void;
   watchedFilesChanged(params: DidChangeWatchedFilesParams): void;
-  gotoDefinition(params: DefinitionParams): Promise<Location | undefined>;
+  gotoDefinition(params: DefinitionParams): Promise<Location[]>;
   complete(params: CompletionParams): Promise<CompletionList>;
+  findReferences(params: ReferenceParams): Promise<Location[]>;
+  prepareRename(params: PrepareRenameParams): Promise<Range | undefined>;
+  rename(params: RenameParams): Promise<WorkspaceEdit>;
   checkChange(change: TextDocumentChangeEvent<TextDocument>): Promise<void>;
   documentClosed(change: TextDocumentChangeEvent<TextDocument>): void;
   log(message: string, details?: any): void;
@@ -171,6 +180,9 @@ export function createServer(host: ServerHost): Server {
     gotoDefinition,
     documentClosed,
     complete,
+    findReferences,
+    prepareRename,
+    rename,
     checkChange,
     log,
   };
@@ -183,6 +195,10 @@ export function createServer(host: ServerHost): Server {
         resolveProvider: false,
         triggerCharacters: [".", "@"],
         allCommitCharacters: [".", ",", ";", "("],
+      },
+      referencesProvider: true,
+      renameProvider: {
+        prepareProvider: true,
       },
     };
 
@@ -250,14 +266,34 @@ export function createServer(host: ServerHost): Server {
     }
   }
 
-  async function compile(document: TextDocument): Promise<Program | undefined> {
+  type CompileCallback<T> = (
+    program: Program,
+    document: TextDocument,
+    script: CadlScriptNode
+  ) => (T | undefined) | Promise<T | undefined>;
+
+  async function compile(
+    document: TextDocument | TextDocumentIdentifier
+  ): Promise<Program | undefined>;
+
+  async function compile<T>(
+    document: TextDocument | TextDocumentIdentifier,
+    callback: CompileCallback<T>
+  ): Promise<T | undefined>;
+
+  async function compile<T>(
+    document: TextDocument | TextDocumentIdentifier,
+    callback?: CompileCallback<T>
+  ): Promise<T | Program | undefined> {
     const path = getPath(document);
     const mainFile = await getMainFileForDocument(path);
     const config = await loadCadlConfigForPath(compilerHost, mainFile);
+
     const options = {
       ...serverOptions,
       emitters: config.emitters ? Object.keys(config.emitters) : [],
     };
+
     if (!upToDate(document)) {
       return undefined;
     }
@@ -278,13 +314,24 @@ export function createServer(host: ServerHost): Server {
       if (!upToDate(document)) {
         return undefined;
       }
+
+      if (callback) {
+        const doc = "version" in document ? document : host.getDocumentByURL(document.uri);
+        compilerAssert(doc, "Failed to get document.");
+        const path = getPath(doc);
+        const script = program.sourceFiles.get(path);
+        compilerAssert(script, "Failed to get script.");
+        return await callback(program, doc, script);
+      }
+
+      return program;
     } catch (err: any) {
       host.sendDiagnostics({
         uri: document.uri,
         diagnostics: [
           {
             severity: DiagnosticSeverity.Error,
-            range: Range.create(document.positionAt(0), document.positionAt(0)),
+            range: Range.create(0, 0, 0, 0),
             message:
               `Internal compiler error!\nFile issue at https://github.com/microsoft/cadl\n\n` +
               err.stack,
@@ -294,8 +341,6 @@ export function createServer(host: ServerHost): Server {
 
       return undefined;
     }
-
-    return program;
   }
 
   async function checkChange(change: TextDocumentChangeEvent<TextDocument>) {
@@ -356,40 +401,12 @@ export function createServer(host: ServerHost): Server {
     }
   }
 
-  async function gotoDefinition(params: DefinitionParams): Promise<Location | undefined> {
-    const document = host.getDocumentByURL(params.textDocument.uri);
-    if (!document) {
-      return undefined;
-    }
-
-    const program = await compile(document);
-    if (!program) {
-      return undefined;
-    }
-
-    const path = getPath(document);
-    const file = program.sourceFiles.get(path);
-    if (!file) {
-      return undefined;
-    }
-
-    const referringNode = getNodeAtPosition(
-      file,
-      document.offsetAt(params.position),
-      (node) => node.kind === SyntaxKind.TypeReference
-    );
-
-    if (!referringNode) {
-      return undefined;
-    }
-
-    const definingNode = program.checker?.getTypeForNode(referringNode)?.node;
-    if (!definingNode) {
-      return undefined;
-    }
-
-    const definingLocation = getSourceLocation(definingNode);
-    return convertSourceLocation(definingLocation);
+  async function gotoDefinition(params: DefinitionParams): Promise<Location[]> {
+    const sym = await compile(params.textDocument, (program, document, file) => {
+      const id = getNodeAtPosition(file, document.offsetAt(params.position));
+      return id?.kind == SyntaxKind.Identifier ? program.checker.resolveIdentifier(id) : undefined;
+    });
+    return getLocations(sym?.declarations);
   }
 
   async function complete(params: CompletionParams): Promise<CompletionList> {
@@ -398,37 +415,92 @@ export function createServer(host: ServerHost): Server {
       items: [],
     };
 
-    const document = host.getDocumentByURL(params.textDocument.uri);
-    if (!document) {
-      return completions;
-    }
-
-    const program = await compile(document);
-    if (!program) {
-      return completions;
-    }
-
-    const path = getPath(document);
-    const file = program.sourceFiles.get(path);
-    if (!file) {
-      return completions;
-    }
-
-    const node = getNodeAtPosition(file, document.offsetAt(params.position));
-    if (node === undefined) {
-      addKeywordCompletion("root", completions);
-    } else {
-      switch (node.kind) {
-        case SyntaxKind.NamespaceStatement:
-          addKeywordCompletion("namespace", completions);
-          break;
-        case SyntaxKind.Identifier:
-          addIdentifierCompletion(program, node, completions);
-          break;
+    await compile(params.textDocument, (program, document, file) => {
+      const node = getNodeAtPosition(file, document.offsetAt(params.position));
+      if (node === undefined) {
+        addKeywordCompletion("root", completions);
+      } else {
+        switch (node.kind) {
+          case SyntaxKind.NamespaceStatement:
+            addKeywordCompletion("namespace", completions);
+            break;
+          case SyntaxKind.Identifier:
+            addIdentifierCompletion(program, node, completions);
+            break;
+        }
       }
-    }
+    });
 
     return completions;
+  }
+
+  async function findReferences(params: ReferenceParams): Promise<Location[]> {
+    const identifiers = await compile(params.textDocument, (program, document, file) =>
+      findReferenceIdentifiers(program, file, document.offsetAt(params.position))
+    );
+    return getLocations(identifiers);
+  }
+
+  async function prepareRename(params: PrepareRenameParams): Promise<Range | undefined> {
+    return await compile(params.textDocument, (_, document, file) => {
+      const id = getNodeAtPosition(file, document.offsetAt(params.position));
+      return id?.kind === SyntaxKind.Identifier ? getLocation(id)?.range : undefined;
+    });
+  }
+
+  async function rename(params: RenameParams): Promise<WorkspaceEdit> {
+    const changes: Record<string, TextEdit[]> = {};
+    await compile(params.textDocument, (program, document, file) => {
+      const identifiers = findReferenceIdentifiers(
+        program,
+        file,
+        document.offsetAt(params.position)
+      );
+      for (const id of identifiers) {
+        const location = getLocation(id);
+        if (!location) {
+          continue;
+        }
+        const change = TextEdit.replace(location.range, params.newName);
+        if (location.uri in changes) {
+          changes[location.uri].push(change);
+        } else {
+          changes[location.uri] = [change];
+        }
+      }
+    });
+    return { changes };
+  }
+
+  function findReferenceIdentifiers(
+    program: Program,
+    file: CadlScriptNode,
+    pos: number
+  ): IdentifierNode[] {
+    const id = getNodeAtPosition(file, pos);
+    if (id?.kind !== SyntaxKind.Identifier) {
+      return [];
+    }
+
+    const sym = program.checker.resolveIdentifier(id);
+    if (!sym) {
+      return [id];
+    }
+
+    const references: IdentifierNode[] = [];
+    for (const script of program.sourceFiles.values() ?? []) {
+      visitChildren(script, function visit(node) {
+        if (
+          node.kind === SyntaxKind.Identifier &&
+          program.checker.resolveIdentifier(node) === sym
+        ) {
+          references.push(node);
+        }
+        visitChildren(node, visit);
+      });
+    }
+
+    return references;
   }
 
   function addKeywordCompletion(area: keyof KeywordArea, completions: CompletionList) {
@@ -449,7 +521,7 @@ export function createServer(host: ServerHost): Server {
     node: IdentifierNode,
     completions: CompletionList
   ) {
-    const result = program.checker!.resolveCompletions(node);
+    const result = program.checker.resolveCompletions(node);
     if (result.size === 0) {
       return;
     }
@@ -464,7 +536,7 @@ export function createServer(host: ServerHost): Server {
       ) {
         kind = CompletionItemKind.Module;
       } else {
-        const type = program.checker!.getTypeForNode(sym.declarations[0]);
+        const type = program.checker.getTypeForNode(sym.declarations[0]);
         documentation = getDoc(program, type);
         kind = getCompletionItemKind(program, type);
       }
@@ -502,7 +574,16 @@ export function createServer(host: ServerHost): Server {
     sendDiagnostics(change.document, []);
   }
 
-  function convertSourceLocation(location: SourceLocation): Location {
+  function getLocations(targets: DiagnosticTarget[] | undefined): Location[] {
+    return targets?.map(getLocation).filter((x): x is Location => !!x) ?? [];
+  }
+
+  function getLocation(target: DiagnosticTarget): Location | undefined {
+    const location = getSourceLocation(target);
+    if (location.isSynthetic) {
+      return undefined;
+    }
+
     const start = location.file.getLineAndCharacterOfPosition(location.pos);
     const end = location.file.getLineAndCharacterOfPosition(location.end);
     return {
@@ -521,6 +602,7 @@ export function createServer(host: ServerHost): Server {
   }
 
   function log(message: string, details: any = undefined) {
+    message = `[${new Date().toLocaleTimeString()}] ${message}`;
     if (details) {
       message += ": " + JSON.stringify(details, undefined, 2);
     }
@@ -631,6 +713,7 @@ export function createServer(host: ServerHost): Server {
   }
 
   function inWorkspace(path: string) {
+    path = ensureTrailingDirectorySeparator(path);
     return workspaceFolders.some((f) => path.startsWith(f.path));
   }
 

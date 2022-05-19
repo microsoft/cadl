@@ -71,7 +71,7 @@
             "items": {
               "type": "string"
             },
-            "x-cadl-name": "Cadl.string[]",
+            "x-cadl-name": "string[]",
             "default": [
               "foo",
               "bar"

@@ -103,7 +103,7 @@ projection model#v {
       return never;
     } else {
       self::properties::forEach((p) => {
-        if addedAfter(p, version, self) {
+        if addedAfter(p, version) {
           self::deleteProperty(p::name);
         };
         

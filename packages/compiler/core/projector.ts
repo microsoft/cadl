@@ -1,3 +1,4 @@
+import { isNeverType } from "../lib/decorators.js";
 import { compilerAssert } from "./diagnostics.js";
 import { Program } from "./program";
 import {
@@ -50,7 +51,7 @@ export function createProjector(
   startNode?: Type
 ): Projector {
   const projectedTypes = new Map<Type, Type>();
-  const checker = program.checker!;
+  const checker = program.checker;
   const neverType = checker.neverType;
   const scope: Type[] = [];
   const projector: Projector = {
@@ -65,8 +66,8 @@ export function createProjector(
   const targetGlobalNs = startNode
     ? startNode.projector
       ? startNode.projector.projectedGlobalNamespace!
-      : program.checker!.getGlobalNamespaceType()
-    : program.checker!.getGlobalNamespaceType();
+      : program.checker.getGlobalNamespaceType()
+    : program.checker.getGlobalNamespaceType();
 
   // project all the namespaces first
   projector.projectedGlobalNamespace = projectNamespace(targetGlobalNs) as NamespaceType;
@@ -157,6 +158,7 @@ export function createProjector(
       if (projected.kind === "Namespace") {
         // todo: check for never?
         childNamespaces.set(key, projected);
+        projected.namespace = projectedNs;
       }
     }
 
@@ -220,6 +222,7 @@ export function createProjector(
 
     const projectedModel = shallowClone(model, {
       properties,
+      derivedModels: [],
     });
 
     if (model.templateArguments !== undefined) {
@@ -247,7 +250,16 @@ export function createProjector(
       checker.finishType(projectedModel);
     }
     projectedModel.templateArguments = templateArguments;
-    return applyProjection(model, projectedModel);
+    const projectedResult = applyProjection(model, projectedModel);
+    if (
+      !isNeverType(projectedResult) &&
+      projectedResult.kind === "Model" &&
+      projectedResult.baseModel
+    ) {
+      projectedResult.baseModel.derivedModels ??= [];
+      projectedResult.baseModel.derivedModels.push(projectedModel);
+    }
+    return projectedResult;
   }
 
   /**
@@ -526,7 +538,7 @@ export function createProjector(
       scopeProps.namespace = projectedNamespaceScope();
     }
     if ("interface" in type && type.interface !== undefined) {
-      scopeProps.namespace = projectedInterfaceScope();
+      scopeProps.interface = projectedInterfaceScope();
     }
 
     const clone = checker.createType({

@@ -12,20 +12,20 @@ using the preview.
 
 ## Packages
 
-| Name                                            | Changelog                    | Latest                                                                                                                             |
-| ----------------------------------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Core functionality                              |                              |                                                                                                                                    |
-| [@cadl-lang/compiler][compiler_src]             | [Changelog][compiler_chg]    | [![](https://img.shields.io/npm/v/@cadl-lang/compiler)](https://www.npmjs.com/package/@cadl-lang/compiler)                         |
-| Cadl Libraries                                  |                              |                                                                                                                                    |
-| [@cadl-lang/rest][rest_src]                     | [Changelog][rest_chg]        | [![](https://img.shields.io/npm/v/@cadl-lang/rest)](https://www.npmjs.com/package/@cadl-lang/rest)                                 |
-| [@cadl-lang/openapi][openapi_src]               | [Changelog][openapi_chg]     | [![](https://img.shields.io/npm/v/@cadl-lang/openapi)](https://www.npmjs.com/package/@cadl-lang/openapi)                           |
-| [@cadl-lang/openapi3][openapi3_src]             | [Changelog][openapi3_chg]    | [![](https://img.shields.io/npm/v/@cadl-lang/openapi3)](https://www.npmjs.com/package/@cadl-lang/openapi3)                         |
-| [@cadl-lang/versioning][versioning_src]         | [Changelog][versioning_chg]  | [![](https://img.shields.io/npm/v/@cadl-lang/versioning)](https://www.npmjs.com/package/@cadl-lang/versioning)                     |
-| Cadl Tools                                      |                              |                                                                                                                                    |
-| [@cadl-lang/prettier-plugin-cadl][prettier_src] | [Changelog][prettier_chg]    | [![](https://img.shields.io/npm/v/@cadl-lang/prettier-plugin-cadl)](https://www.npmjs.com/package/@cadl-lang/prettier-plugin-cadl) |
-| [cadl-vs][cadl-vs_src]                          | [Changelog][cadl-vs_chg]     | [![](https://img.shields.io/npm/v/cadl-vs)](https://www.npmjs.com/package/cadl-vs)                                                 |
-| [cadl-vscode][cadl-vscode_src]                  | [Changelog][cadl-vscode_chg] | [![](https://img.shields.io/npm/v/cadl-vscode)](https://www.npmjs.com/package/cadl-vscode)                                         |
-| [tmlanguage-generator][tmlanguage_src]          | [Changelog][tmlanguage_chg]  | [![](https://img.shields.io/npm/v/tmlanguage-generator)](https://www.npmjs.com/package/tmlanguage-generator)                       |
+| Name                                            | Changelog                    | Latest                                                                                                                             | Next                                                                   |
+| ----------------------------------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Core functionality                              |                              |                                                                                                                                    |                                                                        |
+| [@cadl-lang/compiler][compiler_src]             | [Changelog][compiler_chg]    | [![](https://img.shields.io/npm/v/@cadl-lang/compiler)](https://www.npmjs.com/package/@cadl-lang/compiler)                         | ![](https://img.shields.io/npm/v/@cadl-lang/compiler/next)             |
+| Cadl Libraries                                  |                              |                                                                                                                                    |                                                                        |
+| [@cadl-lang/rest][rest_src]                     | [Changelog][rest_chg]        | [![](https://img.shields.io/npm/v/@cadl-lang/rest)](https://www.npmjs.com/package/@cadl-lang/rest)                                 | ![](https://img.shields.io/npm/v/@cadl-lang/rest/next)                 |
+| [@cadl-lang/openapi][openapi_src]               | [Changelog][openapi_chg]     | [![](https://img.shields.io/npm/v/@cadl-lang/openapi)](https://www.npmjs.com/package/@cadl-lang/openapi)                           | ![](https://img.shields.io/npm/v/@cadl-lang/openapi/next)              |
+| [@cadl-lang/openapi3][openapi3_src]             | [Changelog][openapi3_chg]    | [![](https://img.shields.io/npm/v/@cadl-lang/openapi3)](https://www.npmjs.com/package/@cadl-lang/openapi3)                         | ![](https://img.shields.io/npm/v/@cadl-lang/openapi3/next)             |
+| [@cadl-lang/versioning][versioning_src]         | [Changelog][versioning_chg]  | [![](https://img.shields.io/npm/v/@cadl-lang/versioning)](https://www.npmjs.com/package/@cadl-lang/versioning)                     | ![](https://img.shields.io/npm/v/@cadl-lang/versioning/next)           |
+| Cadl Tools                                      |                              |                                                                                                                                    |                                                                        |
+| [@cadl-lang/prettier-plugin-cadl][prettier_src] | [Changelog][prettier_chg]    | [![](https://img.shields.io/npm/v/@cadl-lang/prettier-plugin-cadl)](https://www.npmjs.com/package/@cadl-lang/prettier-plugin-cadl) | ![](https://img.shields.io/npm/v/@cadl-lang/prettier-plugin-cadl/next) |
+| [cadl-vs][cadl-vs_src]                          | [Changelog][cadl-vs_chg]     | [![](https://img.shields.io/npm/v/cadl-vs)](https://www.npmjs.com/package/cadl-vs)                                                 | ![](https://img.shields.io/npm/v/cadl-vs/next)                         |
+| [cadl-vscode][cadl-vscode_src]                  | [Changelog][cadl-vscode_chg] | [![](https://img.shields.io/npm/v/cadl-vscode)](https://www.npmjs.com/package/cadl-vscode)                                         | ![](https://img.shields.io/npm/v/cadl-vscode/next)                     |
+| [tmlanguage-generator][tmlanguage_src]          | [Changelog][tmlanguage_chg]  | [![](https://img.shields.io/npm/v/tmlanguage-generator)](https://www.npmjs.com/package/tmlanguage-generator)                       | ![](https://img.shields.io/npm/v/tmlanguage-generator/next)            |
 
 [compiler_src]: packages/compiler
 [compiler_chg]: packages/compiler/CHANGELOG.md
@@ -45,6 +45,8 @@ using the preview.
 [cadl-vscode_chg]: packages/cadl-vscode/CHANGELOG.md
 [tmlanguage_src]: packages/tmlanguage-generator
 [tmlanguage_chg]: packages/tmlanguage-generator/CHANGELOG.md
+
+`@next` version of the package are the latest versions available on the `main` branch.
 
 ## Getting Started
 
@@ -151,12 +153,17 @@ equivalent to passing `main.cadl` in that directory.
 ### Formatting Cadl files
 
 Cadl provides an auto-formatter to keep your specs clean and organized.
+`node_modules` folders are automatically excluded by default
 
 ```bash
 cadl format <patterns...>
 
 # Format all the files in the current directory with the cadl extension.
 cadl format **/*.cadl
+
+# Exclude certain patterns. Either use `!` prefix or pass it via the `--exclude` or `-x` option.
+cadl format **/*.cadl "!mytestfolder/**/*"
+cadl format **/*.cadl --exclude "mytestfolder/**/*"
 ```
 
 ### Installing VS Code Extension
@@ -182,3 +189,7 @@ cadl vs install
 ```
 
 This will download and install the latest Visual Studio extension. Use `cadl vs uninstall` to remove it.
+
+If `cadl-server` cannot be found on PATH by Visual Studio in your setup, you can
+configure its location by setting up the `cadl.cadl-server.path` entry in `.vs/VSWorkspaceSettings.json`. You may need to restart Visual Studio after changing this.
+This should be the path to the `@cadl-lang/compiler` package. (e.g. `./node_modules/@cadl-lang/compiler`)

@@ -1,17 +1,5 @@
-import {
-  CompilerHost,
-  createSourceFile,
-  decorators,
-  resolvePath,
-  service,
-} from "@cadl-lang/compiler";
-import * as openapi from "@cadl-lang/openapi";
-import * as openapi3 from "@cadl-lang/openapi3";
-import { http, internalDecorators, resource, rest, route } from "@cadl-lang/rest";
-import * as versioning from "@cadl-lang/versioning";
-import cadlContentsString from "../dist-dev/cadlContents.json?raw";
-
-const cadlContents: Record<string, string> = JSON.parse(cadlContentsString);
+import { CompilerHost, createSourceFile, resolvePath } from "@cadl-lang/compiler";
+import { PlaygroundManifest } from "./manifest";
 
 export interface BrowserHost extends CompilerHost {
   unlink(path: string): Promise<void>;
@@ -24,23 +12,18 @@ export function resolveVirtualPath(path: string, ...paths: string[]) {
 export async function createBrowserHost(): Promise<BrowserHost> {
   const virtualFs = new Map<string, string>();
   const jsImports = new Map<string, Promise<any>>();
-  addJsImport("/test/.cadl/dist/lib/decorators.js", decorators);
-  addJsImport("/test/.cadl/dist/lib/service.js", service);
-  addJsImport("/test/node_modules/@cadl-lang/rest/dist/src/rest.js", rest);
-  addJsImport("/test/node_modules/@cadl-lang/rest/dist/src/route.js", route);
-  addJsImport("/test/node_modules/@cadl-lang/rest/dist/src/http.js", http);
-  addJsImport(
-    "/test/node_modules/@cadl-lang/rest/dist/src/internal-decorators.js",
-    internalDecorators
-  );
-  addJsImport("/test/node_modules/@cadl-lang/rest/dist/src/resource.js", resource);
-  addJsImport("/test/node_modules/@cadl-lang/openapi/dist/src/index.js", openapi);
-  addJsImport("/test/node_modules/@cadl-lang/openapi3/dist/src/openapi.js", openapi3);
-  addJsImport("/test/node_modules/@cadl-lang/versioning/dist/src/versioning.js", versioning);
+  const libsToLoad = PlaygroundManifest.libraries;
 
-  for (const [key, value] of Object.entries(cadlContents)) {
-    virtualFs.set(key, value);
+  for (const libName of libsToLoad) {
+    const { _CadlLibrary_ } = await import(/* @vite-ignore */ libName);
+    for (const [key, value] of Object.entries<any>(_CadlLibrary_.cadlSourceFiles)) {
+      virtualFs.set(`/test/node_modules/${libName}/${key}`, value);
+    }
+    for (const [key, value] of Object.entries<any>(_CadlLibrary_.jsSourceFiles)) {
+      addJsImport(`/test/node_modules/${libName}/${key}`, value);
+    }
   }
+
   function addJsImport(path: string, value: any) {
     virtualFs.set(path, "");
     jsImports.set(path, value);
@@ -89,7 +72,7 @@ export async function createBrowserHost(): Promise<BrowserHost> {
     },
 
     getLibDirs() {
-      return [resolveVirtualPath(".cadl/lib")];
+      return [resolveVirtualPath("/test/node_modules/@cadl-lang/compiler/lib")];
     },
 
     getExecutionRoot() {

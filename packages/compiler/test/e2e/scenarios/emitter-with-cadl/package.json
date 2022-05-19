@@ -1,0 +1,6 @@
+{
+  "name": "@cadl-lang/test-emitter-with-cadl",
+  "type": "module",
+  "main": "lib.js",
+  "cadlMain": "lib.cadl"
+}
