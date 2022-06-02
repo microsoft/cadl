@@ -48,7 +48,7 @@ projection interface#v {
           self::addOperation(operation::name, operation::parameters, operation::returnType);
         } else if removedOnOrBefore(operation, version, self) {
           self::addOperation(operation::name, operation::parameters, operation::returnType);
-        } else if renamedAfter(operation, version, self) {
+        } else if renamedAfter(operation, version, self::projectionBase) {
           self::renameOperation(getRenamedFromOldName(operation), operation::name);
         };
       });

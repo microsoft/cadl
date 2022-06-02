@@ -130,7 +130,8 @@ export interface Checker {
   createAndFinishType<U extends Type extends any ? Omit<Type, keyof TypePrototype> : never>(
     typeDef: U
   ): U & TypePrototype;
-  finishType<T extends Type>(typeDef: T): T;
+  finishType<T extends Type>(typeDef: T, runDecorators?: boolean): T;
+  applyDecoratorToType(decApp: DecoratorApplication, target: Type): void;
   createFunctionType(fn: (...args: Type[]) => Type): FunctionType;
   createLiteralType(value: string, node?: StringLiteralNode): StringLiteralType;
   createLiteralType(value: number, node?: NumericLiteralNode): NumericLiteralType;
@@ -302,6 +303,7 @@ export function createChecker(program: Program): Checker {
     createFunctionType,
     createLiteralType,
     finishType,
+    applyDecoratorToType,
   };
 
   const projectionMembers = createProjectionMembers(checker);
@@ -2327,15 +2329,14 @@ export function createChecker(program: Program): Checker {
     return typeDef as any;
   }
 
-  function finishType<T extends Type>(typeDef: T): T {
+  function finishType<T extends Type>(typeDef: T, runDecorators = true): T {
     (typeDef as any).templateArguments = templateInstantiation;
 
-    if ("decorators" in typeDef) {
+    if (runDecorators && "decorators" in typeDef) {
       for (const decApp of typeDef.decorators) {
         applyDecoratorToType(decApp, typeDef);
       }
     }
-
     Object.setPrototypeOf(typeDef, typePrototype);
 
     return typeDef;

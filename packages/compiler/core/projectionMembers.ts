@@ -242,7 +242,6 @@ export function createProjectionMembers(checker: Checker): {
           assertType("operation name", newNameT, "String");
           const oldName = oldNameT.value;
           const newName = newNameT.value;
-
           const op = base.operations.get(oldName);
           if (!op) {
             throw new ProjectionError(`Couldn't find operation named ${oldName}`);

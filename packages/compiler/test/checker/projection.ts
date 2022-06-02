@@ -174,16 +174,16 @@ describe("cadl: projections", () => {
           program.stateMap(renamedFromKey).set(t, record);
         },
         getAddedOn(p: Program, t: Type) {
-          return p.stateMap(addedOnKey).get(t) || -1;
+          return p.stateMap(addedOnKey).get(t.projectionSource ?? t) || -1;
         },
         getRemovedOn(p: Program, t: Type) {
-          return p.stateMap(removedOnKey).get(t) || Infinity;
+          return p.stateMap(removedOnKey).get(t.projectionSource ?? t) || Infinity;
         },
         getRenamedFromVersion(p: Program, t: Type) {
-          return p.stateMap(renamedFromKey).get(t)?.v ?? -1;
+          return p.stateMap(renamedFromKey).get(t.projectionSource ?? t)?.v ?? -1;
         },
         getRenamedFromOldName(p: Program, t: Type) {
-          return p.stateMap(renamedFromKey).get(t)?.oldName || "";
+          return p.stateMap(renamedFromKey).get(t.projectionSource ?? t)?.oldName || "";
         },
       });
 

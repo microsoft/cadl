@@ -61,7 +61,7 @@ export function createProjector(
     projectType,
   };
   const projectedNamespaces: NamespaceType[] = [];
-
+  const typesWithDecoratorToApply: Array<Type & { decorators: DecoratorApplication[] }> = [];
   program.currentProjector = projector;
 
   const targetGlobalNs = startNode
@@ -83,6 +83,7 @@ export function createProjector(
     ? projectedTypes.get(startNode)
     : projector.projectedGlobalNamespace;
 
+  applyDecorators();
   return projector;
 
   function projectType(type: Type): Type {
@@ -152,7 +153,7 @@ export function createProjector(
     });
 
     // ns run decorators before projecting anything inside them
-    checker.finishType(projectedNs);
+    finishType(projectedNs);
 
     for (const [key, childNs] of ns.namespaces) {
       const projected = projectNamespace(childNs);
@@ -248,7 +249,7 @@ export function createProjector(
 
     projectedModel.decorators = projectDecorators(model.decorators);
     if (shouldFinishType(model)) {
-      checker.finishType(projectedModel);
+      finishType(projectedModel);
     }
     projectedModel.templateArguments = templateArguments;
     const projectedResult = applyProjection(model, projectedModel);
@@ -263,6 +264,21 @@ export function createProjector(
     return projectedResult;
   }
 
+  function finishType(type: Type) {
+    checker.finishType(type, false);
+
+    if ("decorators" in type) {
+      typesWithDecoratorToApply.push(type);
+    }
+  }
+
+  function applyDecorators() {
+    for (const type of typesWithDecoratorToApply) {
+      for (const decApp of type.decorators) {
+        checker.applyDecoratorToType(decApp, type);
+      }
+    }
+  }
   /**
    * Returns true if we should finish a type. The only time we don't finish is when it's
    * a template type, because we don't want to run decorators for templates.
@@ -298,7 +314,7 @@ export function createProjector(
       decorators: projectedDecs,
     });
 
-    checker.finishType(projectedProp);
+    finishType(projectedProp);
     return projectedProp;
   }
 
@@ -319,7 +335,7 @@ export function createProjector(
       projectedOp.namespace = projectedNamespaceScope();
     }
 
-    checker.finishType(projectedOp);
+    finishType(projectedOp);
     return applyProjection(op, projectedOp);
   }
 
@@ -339,10 +355,10 @@ export function createProjector(
     }
 
     if (shouldFinishType(iface)) {
-      checker.finishType(projectedIface);
+      finishType(projectedIface);
     }
 
-    return applyProjection(iface, projectedIface);
+    return applyProjection(iface, projectedIface) as InterfaceType;
   }
 
   function projectUnion(union: UnionType) {
@@ -362,7 +378,7 @@ export function createProjector(
     }
 
     if (shouldFinishType(union)) {
-      checker.finishType(projectedUnion);
+      finishType(projectedUnion);
     }
 
     return applyProjection(union, projectedUnion);
@@ -377,7 +393,7 @@ export function createProjector(
       decorators: projectedDecs,
     });
 
-    checker.finishType(projectedVariant);
+    finishType(projectedVariant);
     return projectedVariant;
   }
 
@@ -388,7 +404,7 @@ export function createProjector(
       elementType: projectedType,
     });
 
-    checker.finishType(projectedArray);
+    finishType(projectedArray);
     return projectedArray;
   }
 
@@ -420,7 +436,7 @@ export function createProjector(
       }
     }
 
-    checker.finishType(projectedEnum);
+    finishType(projectedEnum);
     return applyProjection(e, projectedEnum);
   }
 
@@ -431,7 +447,7 @@ export function createProjector(
       enum: projectedTypes.get(e.enum)! as EnumType,
     });
 
-    checker.finishType(projectedMember);
+    finishType(projectedMember);
     return projectedMember;
   }
 

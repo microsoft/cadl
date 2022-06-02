@@ -99,7 +99,7 @@ export function getRenamedFromVersion(p: Program, t: Type): string | undefined {
  * @returns get old renamed name if applicable.
  */
 export function getRenamedFromOldName(p: Program, t: Type): string {
-  return p.stateMap(renamedFromKey).get(t)?.oldName ?? "";
+  return p.stateMap(renamedFromKey).get(t.projectionSource ?? t)?.oldName ?? "";
 }
 
 /**
@@ -444,6 +444,10 @@ export function getVersions(p: Program, t: Type): [NamespaceType, string[]] | []
   }
 }
 
+export function original(p: Program, type: Type) {
+  return type.projectionSource ?? type;
+}
+
 // these decorators take a `versionSource` parameter because not all types can walk up to
 // the containing namespace. Model properties, for example.
 export function addedAfter(p: Program, type: Type, version: string, versionSource?: Type) {
@@ -477,6 +481,9 @@ function appliesAtVersion(
   version: string,
   versionSource?: Type
 ) {
+  type = type?.projectionSource ?? type;
+  versionSource = versionSource?.projectionSource ?? versionSource;
+
   const [namespace, versions] = getVersions(p, versionSource ?? type);
   if (namespace) {
     const newVersion = versionIndex.get(version)?.get(namespace);
