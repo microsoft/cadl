@@ -1,0 +1,20 @@
+import "@cadl-lang/grpc";
+
+using Cadl.Grpc;
+
+@package("com.azure.test")
+namespace Test;
+
+@service
+interface Service {
+  foo(...Input): Output;
+}
+
+model Input {
+  @field(1) testInputField: string;
+}
+
+model Output {
+  @field(1) testOutputField: int32;
+  @field(2) secondField: string;
+}

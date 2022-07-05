@@ -161,6 +161,12 @@
       "projectFolder": "packages/bundler",
       "reviewCategory": "production",
       "shouldPublish": false
+    },
+    {
+      "packageName": "@cadl-lang/grpc",
+      "projectFolder": "packages/grpc",
+      "reviewCategory": "production",
+      "shouldPublish": false
     }
   ]
 }

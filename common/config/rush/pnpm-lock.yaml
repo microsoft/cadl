@@ -15,6 +15,7 @@ specifiers:
   '@rush-temp/compiler': file:./projects/compiler.tgz
   '@rush-temp/eslint-config-cadl': file:./projects/eslint-config-cadl.tgz
   '@rush-temp/eslint-plugin': file:./projects/eslint-plugin.tgz
+  '@rush-temp/grpc': file:./projects/grpc.tgz
   '@rush-temp/html-program-viewer': file:./projects/html-program-viewer.tgz
   '@rush-temp/internal-build-utils': file:./projects/internal-build-utils.tgz
   '@rush-temp/library-linter': file:./projects/library-linter.tgz
@@ -32,6 +33,7 @@ specifiers:
   '@types/debounce': ~1.2.1
   '@types/js-yaml': ~4.0.1
   '@types/lz-string': ~1.3.34
+  '@types/micromatch': ~4.0.2
   '@types/mkdirp': ~1.0.1
   '@types/mocha': ~9.1.0
   '@types/mustache': ~4.1.2
@@ -64,6 +66,7 @@ specifiers:
   grammarkdown: ~3.1.2
   js-yaml: ~4.1.0
   lzutf8: ~0.6.1
+  micromatch: ~4.0.5
   mkdirp: ~1.0.4
   mocha: ~9.2.0
   monaco-editor: ~0.32.1
@@ -111,6 +114,7 @@ dependencies:
   '@rush-temp/compiler': file:projects/compiler.tgz
   '@rush-temp/eslint-config-cadl': file:projects/eslint-config-cadl.tgz_prettier@2.7.1
   '@rush-temp/eslint-plugin': file:projects/eslint-plugin.tgz
+  '@rush-temp/grpc': file:projects/grpc.tgz
   '@rush-temp/html-program-viewer': file:projects/html-program-viewer.tgz
   '@rush-temp/internal-build-utils': file:projects/internal-build-utils.tgz
   '@rush-temp/library-linter': file:projects/library-linter.tgz
@@ -128,6 +132,7 @@ dependencies:
   '@types/debounce': 1.2.1
   '@types/js-yaml': 4.0.5
   '@types/lz-string': 1.3.34
+  '@types/micromatch': 4.0.2
   '@types/mkdirp': 1.0.2
   '@types/mocha': 9.1.1
   '@types/mustache': 4.1.3
@@ -160,6 +165,7 @@ dependencies:
   grammarkdown: 3.1.2
   js-yaml: 4.1.0
   lzutf8: 0.6.2
+  micromatch: 4.0.5
   mkdirp: 1.0.4
   mocha: 9.2.2
   monaco-editor: 0.32.1
@@ -768,6 +774,10 @@ packages:
     resolution: {integrity: sha512-2TN6oiwtNjOezilFVl77zwdNPwQWaDBBCCWWxyo1ctiO3vAtd7H/aB/CBJdw9+kqq3+latD0SXoedIuHySSZWw==}
     dev: false
 
+  /@types/braces/3.0.1:
+    resolution: {integrity: sha512-+euflG6ygo4bn0JHtn4pYqcXwRtLvElQ7/nnjDu7iYG56H0+OhCd7d6Ug0IE3WcFpZozBKW2+80FUbv5QGk5AQ==}
+    dev: false
+
   /@types/debounce/1.2.1:
     resolution: {integrity: sha512-epMsEE85fi4lfmJUH/89/iV/LI+F5CvNIvmgs5g5jYFPfhO2S/ae8WSsLOKWdwtoaZw9Q2IhJ4tQ5tFCcS/4HA==}
     dev: false
@@ -801,6 +811,12 @@ packages:
 
   /@types/lz-string/1.3.34:
     resolution: {integrity: sha512-j6G1e8DULJx3ONf6NdR5JiR2ZY3K3PaaqiEuKYkLQO0Czfi1AzrtjfnfCROyWGeDd5IVMKCwsgSmMip9OWijow==}
+    dev: false
+
+  /@types/micromatch/4.0.2:
+    resolution: {integrity: sha512-oqXqVb0ci19GtH0vOA/U2TmHTcRY9kuZl4mqUxe0QmJAlIW13kzhuK5pi1i9+ngav8FjpSb9FVS/GE00GLX1VA==}
+    dependencies:
+      '@types/braces': 3.0.1
     dev: false
 
   /@types/mkdirp/1.0.2:
@@ -4799,6 +4815,24 @@ packages:
       '@typescript-eslint/utils': 5.26.0_eslint@8.16.0+typescript@4.7.2
       c8: 7.11.3
       eslint: 8.16.0
+      mocha: 9.2.2
+      rimraf: 3.0.2
+      typescript: 4.7.2
+    transitivePeerDependencies:
+      - supports-color
+    dev: false
+
+  file:projects/grpc.tgz:
+    resolution: {integrity: sha512-nEZHkBdQI9QallJBv7HoXH1hp65qPnlNSl6RHFX77g0fHOpDhaBE5DF8l6GI86WRCkWvURaxqbMkxHNBC9nZEA==, tarball: file:projects/grpc.tgz}
+    name: '@rush-temp/grpc'
+    version: 0.0.0
+    dependencies:
+      '@types/micromatch': 4.0.2
+      '@types/mocha': 9.1.1
+      '@types/node': 16.0.3
+      c8: 7.11.3
+      eslint: 8.16.0
+      micromatch: 4.0.5
       mocha: 9.2.2
       rimraf: 3.0.2
       typescript: 4.7.2

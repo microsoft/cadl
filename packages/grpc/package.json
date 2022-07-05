@@ -1,0 +1,47 @@
+{
+  "name": "@cadl-lang/grpc",
+  "version": "0.1.0",
+  "author": "Microsoft Corporation",
+  "description": "Cadl library and emitter for gRPC/Protobuf",
+  "homepage": "https://github.com/Microsoft/cadl",
+  "readme": "https://github.com/Microsoft/cadl/blob/master/README.md",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Microsoft/cadl.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Microsoft/cadl/issues"
+  },
+  "keywords": [
+    "cadl"
+  ],
+  "main": "dist/src/grpc.js",
+  "type": "module",
+  "cadlMain": "dist/src/grpc.js",
+  "scripts": {
+    "clean": "rimraf ./dist ./temp",
+    "build": "tsc -p .",
+    "watch": "tsc -p . --watch",
+    "test": "mocha",
+    "test-official": "c8 mocha --forbid-only",
+    "lint": "eslint . --ext .ts --max-warnings=0",
+    "lint:fix": "eslint . --fix --ext .ts"
+  },
+  "dependencies": {
+    "@cadl-lang/compiler": "~0.32.0"
+  },
+  "devDependencies": {
+    "@cadl-lang/eslint-config-cadl": "~0.3.0",
+    "@cadl-lang/eslint-plugin": "~0.1.0",
+    "@types/mocha": "~9.1.0",
+    "@types/node": "~16.0.3",
+    "c8": "~7.11.0",
+    "eslint": "^8.12.0",
+    "mocha": "~9.2.0",
+    "rimraf": "~3.0.2",
+    "typescript": "~4.7.2",
+    "micromatch": "~4.0.5",
+    "@types/micromatch": "~4.0.2"
+  }
+}

@@ -1,0 +1,1 @@
+/test/main.cadl:11:7 - error cadl-grpc/field-index: field index 0 is invalid (must be an integer greater than zero)

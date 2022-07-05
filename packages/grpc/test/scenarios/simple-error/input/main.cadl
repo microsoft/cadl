@@ -1,0 +1,12 @@
+import "@cadl-lang/grpc";
+
+using Cadl.Grpc;
+
+@package
+namespace Test;
+
+@service
+interface Service {
+  // invalid field index
+  foo(@field(0) testInputField: string): {};
+}
