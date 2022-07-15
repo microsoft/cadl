@@ -345,6 +345,29 @@ describe("compiler: models", () => {
       const diagnostics = await testHost.diagnose("main.cadl");
       expectDiagnosticEmpty(diagnostics);
     });
+
+    it("can extend a template parameter", async () => {
+      const blues = new WeakSet();
+      let calls = 0;
+      testHost.addJsFile("dec.js", {
+        $blue(p: any, t: Type) {
+          calls++;
+          blues.add(t);
+        },
+      });
+      testHost.addCadlFile(
+        "main.cadl",
+        `
+        import "./dec.js";
+        @blue @test model A<T> extends T { };
+        @test model B {};
+        model C { a: A<B> };
+        `
+      );
+      const { A, B } = (await testHost.compile("./")) as { A: ModelType; B: ModelType };
+      strictEqual(calls, 1);
+      strictEqual(A.baseModel, B);
+    });
   });
 
   describe("with is", () => {
@@ -523,6 +546,29 @@ describe("compiler: models", () => {
       strictEqual((C as ModelType).properties.size, 2);
       strictEqual(((C as ModelType).properties.get("c")?.type as any).name, "int32");
       strictEqual(((C as ModelType).properties.get("b")?.type as any).name, "B");
+    });
+
+    it("can is a template parameter", async () => {
+      const blues = new WeakSet();
+      let calls = 0;
+      testHost.addJsFile("dec.js", {
+        $blue(p: any, t: Type) {
+          calls++;
+          blues.add(t);
+        },
+      });
+      testHost.addCadlFile(
+        "main.cadl",
+        `
+        import "./dec.js";
+        @blue @test model A<T> is T { };
+        @test model B { b: string };
+        model C { a: A<B> };
+        `
+      );
+      const { A } = (await testHost.compile("./")) as { A: ModelType };
+      strictEqual(calls, 1);
+      strictEqual(A.properties.size, 1);
     });
   });
 });

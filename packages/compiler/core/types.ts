@@ -161,7 +161,7 @@ export interface ModelType extends BaseType, DecoratedType, TemplatedType {
   /**
    * Model this model extends. This represent inheritance.
    */
-  baseModel?: ModelType;
+  baseModel?: ModelType | TemplateParameterType;
 
   /**
    * Direct children. This is the reverse relation of @see baseModel

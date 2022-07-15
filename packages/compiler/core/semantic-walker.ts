@@ -101,7 +101,11 @@ function navigateModelType(
     navigateModelTypeProperty(property, eventEmitter, visited);
   }
   if (model.baseModel) {
-    navigateModelType(model.baseModel, eventEmitter, visited);
+    if (model.baseModel.kind === "Model") {
+      navigateModelType(model.baseModel, eventEmitter, visited);
+    } else {
+      navigateTemplateParameter(model.baseModel, eventEmitter, visited);
+    }
   }
   eventEmitter.emit("exitModel", model);
 }
@@ -270,6 +274,7 @@ export function getProperty(type: ModelType, propertyName: string): ModelTypePro
     if (type.properties.has(propertyName)) {
       return type.properties.get(propertyName);
     }
+    if (type.baseModel.kind === "TemplateParameter") break;
     type = type.baseModel;
   }
   return type.properties.get(propertyName);

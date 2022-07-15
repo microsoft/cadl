@@ -258,7 +258,8 @@ export function createProjector(
     if (
       !isNeverType(projectedResult) &&
       projectedResult.kind === "Model" &&
-      projectedResult.baseModel
+      projectedResult.baseModel &&
+      projectedResult.baseModel.kind === "Model"
     ) {
       projectedResult.baseModel.derivedModels ??= [];
       projectedResult.baseModel.derivedModels.push(projectedModel);

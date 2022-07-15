@@ -965,6 +965,7 @@ function createOAPIEmitter(program: Program, options: OpenAPIEmitterOptions) {
     // templated type.
     if (
       model.baseModel &&
+      model.baseModel.kind === "Model" &&
       model.baseModel.templateArguments &&
       model.baseModel.templateArguments.length > 0 &&
       Object.keys(modelSchema.properties).length === 0

@@ -11,6 +11,7 @@ import {
   ModelTypeProperty,
   OperationType,
   Program,
+  TemplateParameterType,
   Type,
 } from "@cadl-lang/compiler";
 import { createDiagnostic } from "../diagnostics.js";
@@ -96,8 +97,12 @@ function processResponseType(
       } else {
         const isResponseMetadata = (p: ModelTypeProperty) =>
           isHeader(program, p) || isStatusCode(program, p);
-        const allProperties = (p: ModelType): ModelTypeProperty[] => {
-          return [...p.properties.values(), ...(p.baseModel ? allProperties(p.baseModel) : [])];
+        const allProperties = (p: ModelType | TemplateParameterType): ModelTypeProperty[] => {
+          if (p.kind === "TemplateParameter") {
+            return [];
+          } else {
+            return [...p.properties.values(), ...(p.baseModel ? allProperties(p.baseModel) : [])];
+          }
         };
         if (
           allProperties(responseModel).some((p) => !isResponseMetadata(p)) ||
@@ -276,7 +281,8 @@ function getResponseBody(
   responseModel: Type
 ): Type | undefined {
   if (responseModel.kind === "Model") {
-    const getAllBodyProps = (m: ModelType): ModelTypeProperty[] => {
+    const getAllBodyProps = (m: ModelType | TemplateParameterType): ModelTypeProperty[] => {
+      if (m.kind === "TemplateParameter") return [];
       const bodyProps = [...m.properties.values()].filter((t) => isBody(program, t));
       if (m.baseModel) {
         bodyProps.push(...getAllBodyProps(m.baseModel));

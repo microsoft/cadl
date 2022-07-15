@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@cadl-lang/rest",
+      "comment": "Handle model extends template parameter",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@cadl-lang/rest"
+}
