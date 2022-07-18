@@ -13,5 +13,6 @@ export default definePlaygroundViteConfig({
     Http: "samples/http.cadl",
     "Rest framework": "samples/rest.cadl",
     "Versioned Rest framework": "samples/versioning.cadl",
+    Metadata: "samples/metadata.cadl",
   },
 });

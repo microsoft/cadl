@@ -12,6 +12,7 @@ import {
   OperationType,
   Program,
   Type,
+  walkPropertiesInherited,
 } from "@cadl-lang/compiler";
 import { createDiagnostic } from "../diagnostics.js";
 import {
@@ -22,6 +23,7 @@ import {
   isHeader,
   isStatusCode,
 } from "./decorators.js";
+import { gatherMetadata, isApplicableMetadata, Visibility } from "./route.js";
 
 export type StatusCode = `${number}` | "*";
 export interface HttpOperationResponse {
@@ -74,50 +76,28 @@ function processResponseType(
   program: Program,
   diagnostics: DiagnosticCollector,
   responses: Record<string, HttpOperationResponse>,
-  responseModel: Type
+  responseType: Type
 ) {
+  const metadata = gatherMetadata(program, diagnostics, responseType, Visibility.Read);
+
   // Get explicity defined status codes
-  const statusCodes: Array<string> = getResponseStatusCodes(program, responseModel);
+  const statusCodes: Array<string> = getResponseStatusCodes(program, responseType, metadata);
 
   // Get explicitly defined content types
-  const contentTypes = getResponseContentTypes(program, diagnostics, responseModel);
+  const contentTypes = getResponseContentTypes(program, diagnostics, metadata);
 
   // Get response headers
-  const headers = getResponseHeaders(program, responseModel);
+  const headers = getResponseHeaders(program, metadata);
 
-  // Get explicitly defined body
-  let bodyModel = getResponseBody(program, diagnostics, responseModel);
-  // If there is no explicit body, it should be conjured from the return type
-  // if it is a primitive type or it contains more than just response metadata
-  if (!bodyModel) {
-    if (responseModel.kind === "Model") {
-      if (isIntrinsic(program, responseModel)) {
-        bodyModel = responseModel;
-      } else {
-        const isResponseMetadata = (p: ModelTypeProperty) =>
-          isHeader(program, p) || isStatusCode(program, p);
-        const allProperties = (p: ModelType): ModelTypeProperty[] => {
-          return [...p.properties.values(), ...(p.baseModel ? allProperties(p.baseModel) : [])];
-        };
-        if (
-          allProperties(responseModel).some((p) => !isResponseMetadata(p)) ||
-          responseModel.derivedModels.length > 0
-        ) {
-          bodyModel = responseModel;
-        }
-      }
-    } else {
-      // body is array or possibly something else
-      bodyModel = responseModel;
-    }
-  }
+  // Get body
+  let bodyType = getResponseBody(program, diagnostics, responseType, metadata);
 
   // If there is no explicit status code, check if it should be 204
   if (statusCodes.length === 0) {
-    if (bodyModel === undefined || isVoidType(bodyModel)) {
-      bodyModel = undefined;
+    if (bodyType === undefined || isVoidType(bodyType)) {
+      bodyType = undefined;
       statusCodes.push("204");
-    } else if (isErrorModel(program, responseModel)) {
+    } else if (isErrorModel(program, responseType)) {
       statusCodes.push("*");
     } else {
       statusCodes.push("200");
@@ -125,7 +105,7 @@ function processResponseType(
   }
 
   // If there is a body but no explicit content types, use application/json
-  if (bodyModel && contentTypes.length === 0) {
+  if (bodyType && contentTypes.length === 0) {
     contentTypes.push("application/json");
   }
 
@@ -134,9 +114,9 @@ function processResponseType(
     // the first model for this statusCode/content type pair carries the
     // description for the endpoint. This could probably be improved.
     const response: HttpOperationResponse = responses[statusCode] ?? {
-      statusCode: statusCode,
-      type: responseModel,
-      description: getResponseDescription(program, responseModel, statusCode),
+      statusCode,
+      type: responseType,
+      description: getResponseDescription(program, responseType, statusCode),
       responses: [],
     };
 
@@ -147,19 +127,19 @@ function processResponseType(
           createDiagnostic({
             code: "duplicate-response",
             format: { statusCode: statusCode.toString(), contentType },
-            target: responseModel,
+            target: responseType,
           })
         );
       }
     }
 
-    if (bodyModel !== undefined) {
-      response.responses.push({ body: { contentTypes: contentTypes, type: bodyModel }, headers });
+    if (bodyType !== undefined) {
+      response.responses.push({ body: { contentTypes: contentTypes, type: bodyType }, headers });
     } else if (contentTypes.length > 0) {
       diagnostics.add(
         createDiagnostic({
           code: "content-type-ignored",
-          target: responseModel,
+          target: responseType,
         })
       );
     } else {
@@ -170,47 +150,48 @@ function processResponseType(
 }
 
 /**
- * Get explicity defined status codes from response Model
+ * Get explicity defined status codes from response type and metadata
  * Return is an array of strings, possibly empty, which indicates no explicitly defined status codes.
  * We do not check for duplicates here -- that will be done by the caller.
  */
-function getResponseStatusCodes(program: Program, responseModel: Type): string[] {
+function getResponseStatusCodes(
+  program: Program,
+  responseType: Type,
+  metadata: Set<ModelTypeProperty>
+): string[] {
   const codes: string[] = [];
-  if (responseModel.kind === "Model") {
-    if (responseModel.baseModel) {
-      codes.push(...getResponseStatusCodes(program, responseModel.baseModel));
-    }
-    codes.push(...getStatusCodes(program, responseModel));
-    for (const prop of responseModel.properties.values()) {
-      if (isStatusCode(program, prop)) {
-        codes.push(...getStatusCodes(program, prop));
-      }
+
+  for (const prop of metadata) {
+    if (isStatusCode(program, prop)) {
+      codes.push(...getStatusCodes(program, prop));
     }
   }
+
+  if (responseType.kind === "Model") {
+    for (let t: ModelType | undefined = responseType; t; t = t.baseModel) {
+      codes.push(...getStatusCodes(program, t));
+    }
+  }
+
   return codes;
 }
 
 /**
- * Get explicity defined content-types from response Model
+ * Get explicity defined content-types from response metadata
  * Return is an array of strings, possibly empty, which indicates no explicitly defined content-type.
  * We do not check for duplicates here -- that will be done by the caller.
  */
 function getResponseContentTypes(
   program: Program,
   diagnostics: DiagnosticCollector,
-  responseModel: Type
+  metadata: Set<ModelTypeProperty>
 ): string[] {
   const contentTypes: string[] = [];
-  if (responseModel.kind === "Model") {
-    if (responseModel.baseModel) {
-      contentTypes.push(...getResponseContentTypes(program, diagnostics, responseModel.baseModel));
-    }
-    for (const prop of responseModel.properties.values()) {
-      if (isHeader(program, prop)) {
-        const headerName = getHeaderFieldName(program, prop);
-        if (headerName && headerName.toLowerCase() === "content-type") {
-          contentTypes.push(...diagnostics.pipe(getContentTypes(prop)));
-        }
+  for (const prop of metadata) {
+    if (isHeader(program, prop)) {
+      const headerName = getHeaderFieldName(program, prop);
+      if (headerName && headerName.toLowerCase() === "content-type") {
+        contentTypes.push(...diagnostics.pipe(getContentTypes(prop)));
       }
     }
   }
@@ -249,49 +230,61 @@ export function getContentTypes(property: ModelTypeProperty): [string[], readonl
 }
 
 /**
- * Get response headers from response Model
+ * Get response headers from response metadata
  */
 function getResponseHeaders(
   program: Program,
-  responseModel: Type
+  metadata: Set<ModelTypeProperty>
 ): Record<string, ModelTypeProperty> {
-  if (responseModel.kind === "Model") {
-    const responseHeaders: any = responseModel.baseModel
-      ? getResponseHeaders(program, responseModel.baseModel)
-      : {};
-    for (const prop of responseModel.properties.values()) {
-      const headerName = getHeaderFieldName(program, prop);
-      if (isHeader(program, prop) && headerName !== "content-type") {
-        responseHeaders[headerName] = prop;
-      }
+  const responseHeaders: Record<string, ModelTypeProperty> = {};
+  for (const prop of metadata) {
+    const headerName = getHeaderFieldName(program, prop);
+    if (isHeader(program, prop) && headerName !== "content-type") {
+      responseHeaders[headerName] = prop;
     }
-    return responseHeaders;
   }
-  return {};
+  return responseHeaders;
 }
 
 function getResponseBody(
   program: Program,
   diagnostics: DiagnosticCollector,
-  responseModel: Type
+  responseType: Type,
+  metadata: Set<ModelTypeProperty>
 ): Type | undefined {
-  if (responseModel.kind === "Model") {
-    const getAllBodyProps = (m: ModelType): ModelTypeProperty[] => {
-      const bodyProps = [...m.properties.values()].filter((t) => isBody(program, t));
-      if (m.baseModel) {
-        bodyProps.push(...getAllBodyProps(m.baseModel));
+  // non-model or intrinsic model -> response body is response type
+  if (responseType.kind !== "Model" || isIntrinsic(program, responseType)) {
+    return responseType;
+  }
+
+  // look for explicit body
+  let bodyProperty: ModelTypeProperty | undefined;
+  for (const property of metadata) {
+    if (isBody(program, property)) {
+      if (bodyProperty) {
+        diagnostics.add(createDiagnostic({ code: "duplicate-body", target: property }));
+      } else {
+        bodyProperty = property;
       }
-      return bodyProps;
-    };
-    const bodyProps = getAllBodyProps(responseModel);
-    if (bodyProps.length > 0) {
-      // Report all but first body as duplicate
-      for (const prop of bodyProps.slice(1)) {
-        diagnostics.add(createDiagnostic({ code: "duplicate-body", target: prop }));
-      }
-      return bodyProps[0].type;
     }
   }
+  if (bodyProperty) {
+    return bodyProperty.type;
+  }
+
+  // Without an explicit body, response type is response model itself if
+  // there it has at least one non-metadata property, or if it has derived
+  // models
+  if (responseType.derivedModels.length > 0) {
+    return responseType;
+  }
+  for (const property of walkPropertiesInherited(responseType)) {
+    if (!isApplicableMetadata(program, property, Visibility.Read)) {
+      return responseType;
+    }
+  }
+
+  // Otherwise, there is no body
   return undefined;
 }
 

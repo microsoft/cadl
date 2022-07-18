@@ -1,0 +1,17 @@
+import "@cadl-lang/rest";
+using Cadl.Http;
+
+model Pet {
+  @header("ETag") etag: string;
+
+  @visibility("read")
+  @path
+  id: string;
+  name: string;
+}
+
+@route("/pets")
+interface Pets {
+  @post create(pet: Pet): Pet;
+  @get list(): Pet[];
+}

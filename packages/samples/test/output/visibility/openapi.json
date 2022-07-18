@@ -112,7 +112,7 @@
           "test": {
             "type": "string"
           },
-          "create": {
+          "other": {
             "type": "string"
           }
         },
@@ -120,7 +120,7 @@
           "id",
           "name",
           "test",
-          "create"
+          "other"
         ]
       },
       "WritablePerson": {

@@ -33,7 +33,7 @@ export function $header(context: DecoratorContext, entity: ModelTypeProperty, he
   context.program.stateMap(headerFieldsKey).set(entity, headerName);
 }
 
-export function getHeaderFieldName(program: Program, entity: Type) {
+export function getHeaderFieldName(program: Program, entity: Type): string {
   return program.stateMap(headerFieldsKey).get(entity);
 }
 
@@ -57,7 +57,7 @@ export function $query(context: DecoratorContext, entity: Type, queryKey?: strin
   context.program.stateMap(queryFieldsKey).set(entity, queryKey);
 }
 
-export function getQueryParamName(program: Program, entity: Type) {
+export function getQueryParamName(program: Program, entity: Type): string {
   return program.stateMap(queryFieldsKey).get(entity);
 }
 
@@ -81,7 +81,7 @@ export function $path(context: DecoratorContext, entity: Type, paramName?: strin
   context.program.stateMap(pathFieldsKey).set(entity, paramName);
 }
 
-export function getPathParamName(program: Program, entity: Type) {
+export function getPathParamName(program: Program, entity: Type): string {
   return program.stateMap(pathFieldsKey).get(entity);
 }
 

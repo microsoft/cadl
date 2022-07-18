@@ -4,14 +4,14 @@ using Cadl.Http;
 
 model Person {
   @visibility("read") id: string;
-  @visibility("write") secret: string;
+  @visibility("create") secret: string;
   name: string;
 
-  @visibility("read", "write")
+  @visibility("read", "create")
   test: string;
 
-  @visibility("create", "read")
-  create: string;
+  @visibility("other", "read")
+  other: string;
 }
 
 @withVisibility("read")
@@ -19,7 +19,7 @@ model Readable<T> {
   ...T;
 }
 
-@withVisibility("write")
+@withVisibility("create")
 model Writable<T> {
   ...T;
 }
