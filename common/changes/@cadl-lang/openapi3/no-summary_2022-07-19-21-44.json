@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@cadl-lang/openapi3",
+      "comment": "Remove `summary` property set on schemas",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@cadl-lang/openapi3"
+}
