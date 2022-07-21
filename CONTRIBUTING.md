@@ -116,6 +116,27 @@ Rush change will ask for the following questions for each modified packages:
   - `patch`: A bug fix.
   - `none`: Not relevant to the consumer of the packages. For example some added tests.
 
+## Linting
+
+```bash
+rush lint
+```
+
+PR validation enforces linting rules for the repo. This
+command will run the linter on all packages.
+
+## Regenerate Samples
+
+```bash
+rush regen-samples
+```
+
+PR validation runs OpenAPI emitters on samples and compares them to known,
+reviewed, checked-in versions. If your PR would change the generated output,
+run this command to regenerate any samples and check those files in with
+your PR. Carefully review whether the changes are intentional. 
+
+
 # Using VS Code
 
 ## Recommended extensions
