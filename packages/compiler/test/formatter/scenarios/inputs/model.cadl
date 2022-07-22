@@ -18,3 +18,12 @@ model WithSpreadAndProps {
 model     GenericExtension<T>     extends   Parent<T> {
 
 }
+
+model Foo<
+  T extends string,
+  K extends {
+    foo: int32;
+             some: string;
+             eveneveneveneveneveneven: string;
+          someveryveryveryveryverylong: string;
+  }> {}

@@ -665,11 +665,15 @@ export function createChecker(program: Program): Checker {
       // Cache the type to prevent circual reference stack overflows.
       links.declaredType = type;
 
+      if (node.constraint) {
+        type.constraint = getTypeForNode(node.constraint);
+      }
       if (node.default) {
         type.default = checkTemplateParameterDefault(
           node.default,
           parentNode.templateParameters,
-          index
+          index,
+          type.constraint
         );
       }
     } else {
@@ -699,7 +703,8 @@ export function createChecker(program: Program): Checker {
   function checkTemplateParameterDefault(
     nodeDefault: Expression,
     templateParameters: readonly TemplateParameterDeclarationNode[],
-    index: number
+    index: number,
+    constraint: Type | undefined
   ) {
     function visit(node: Node) {
       const type = getTypeForNode(node);
@@ -725,7 +730,12 @@ export function createChecker(program: Program): Checker {
 
       return hasError ? undefined : type;
     }
-    return visit(nodeDefault) ?? errorType;
+    const type = visit(nodeDefault) ?? errorType;
+
+    if (!isErrorType(type) && constraint) {
+      checkTypeAssignable(type, constraint, nodeDefault);
+    }
+    return type;
   }
 
   function checkTypeReference(
@@ -750,22 +760,22 @@ export function createChecker(program: Program): Checker {
 
   function checkTypeReferenceArgs(
     node: TypeReferenceNode | MemberExpressionNode | IdentifierNode
-  ): Type[] {
-    const args: Type[] = [];
+  ): [Node, Type][] {
+    const args: [Node, Type][] = [];
     if (node.kind !== SyntaxKind.TypeReference) {
       return args;
     }
 
     for (const arg of node.arguments) {
       const value = getTypeForNode(arg);
-      args.push(value);
+      args.push([arg, value]);
     }
     return args;
   }
 
   function checkTemplateInstantiationArgs(
     node: Node,
-    args: Type[],
+    args: [Node, Type][],
     declarations: readonly TemplateParameterDeclarationNode[]
   ): Type[] {
     if (args.length > declarations.length) {
@@ -779,12 +789,16 @@ export function createChecker(program: Program): Checker {
     let tooFew = false;
     for (let i = 0; i < declarations.length; i++) {
       const declaration = declarations[i];
-
+      const declaredType = getTypeForNode(declaration)! as TemplateParameterType;
       if (i < args.length) {
-        values.push(args[i]);
-        valueMap[declaration.id.sv] = args[i];
+        const [valueNode, value] = args[i];
+        values.push(value);
+        if (declaredType.constraint) {
+          checkTypeAssignable(value, declaredType.constraint, valueNode);
+        }
+
+        valueMap[declaration.id.sv] = value;
       } else {
-        const declaredType = getTypeForNode(declaration)! as TemplateParameterType;
         const defaultValue = getResolvedTypeParameterDefault(declaredType, valueMap);
         if (defaultValue) {
           values.push(defaultValue);
@@ -3693,6 +3707,24 @@ export function createChecker(program: Program): Checker {
     parts.push(current.sv);
 
     return parts.reverse().join(".");
+  }
+
+  /**
+   * Check if the source type can be assigned to the target type and emit diagnostics
+   * @param source Source type
+   * @param target Target type
+   * @param diagnosticTarget Target for the diagnostic, unless something better can be inffered.
+   */
+  function checkTypeAssignable(
+    source: Type,
+    target: Type,
+    diagnosticTarget: DiagnosticTarget
+  ): boolean {
+    const [related, diagnostics] = isTypeAssignableTo(source, target, diagnosticTarget);
+    if (!related) {
+      program.reportDiagnostics(diagnostics);
+    }
+    return related;
   }
 
   /**

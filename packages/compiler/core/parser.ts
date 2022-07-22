@@ -718,6 +718,10 @@ export function parse(code: string | SourceFile, options: ParseOptions = {}): Ca
   function parseTemplateParameter(): TemplateParameterDeclarationNode {
     const pos = tokenPos();
     const id = parseIdentifier();
+    let constraint: Expression | undefined;
+    if (parseOptional(Token.ExtendsKeyword)) {
+      constraint = parseExpression();
+    }
     let def: Expression | undefined;
     if (parseOptional(Token.Equals)) {
       def = parseExpression();
@@ -725,6 +729,7 @@ export function parse(code: string | SourceFile, options: ParseOptions = {}): Ca
     return {
       kind: SyntaxKind.TemplateParameterDeclaration,
       id,
+      constraint,
       default: def,
       ...finishNode(pos),
     };
@@ -2355,7 +2360,9 @@ export function visitChildren<T>(node: Node, cb: NodeCallback<T>): T | undefined
     case SyntaxKind.InvalidStatement:
       return visitEach(cb, node.decorators);
     case SyntaxKind.TemplateParameterDeclaration:
-      return visitNode(cb, node.id) || visitNode(cb, node.default);
+      return (
+        visitNode(cb, node.id) || visitNode(cb, node.constraint) || visitNode(cb, node.default)
+      );
     case SyntaxKind.ProjectionLambdaParameterDeclaration:
       return visitNode(cb, node.id);
     case SyntaxKind.ProjectionParameterDeclaration:

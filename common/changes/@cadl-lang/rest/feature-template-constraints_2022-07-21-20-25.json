@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@cadl-lang/rest",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@cadl-lang/rest"
+}

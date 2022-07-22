@@ -379,8 +379,11 @@ TemplateParameterList :
     TemplateParameterList `,` TemplateParameter
 
 TemplateParameter :
-    Identifier TemplateParameterDefault?
+    Identifier TemplateParameterConstraint? TemplateParameterDefault?
 
+TemplateParameterConstraint :
+    `extends` Expression
+    
 TemplateParameterDefault :
     `=` Expression
 

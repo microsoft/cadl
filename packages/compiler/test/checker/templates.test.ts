@@ -1,7 +1,14 @@
 import { deepStrictEqual, fail, strictEqual } from "assert";
 import { getSourceLocation } from "../../core/diagnostics.js";
 import { Diagnostic, ModelType, StringLiteralType } from "../../core/types.js";
-import { createTestHost, expectDiagnostics, TestHost } from "../../testing/index.js";
+import {
+  BasicTestRunner,
+  createTestHost,
+  createTestRunner,
+  expectDiagnostics,
+  extractSquiggles,
+  TestHost,
+} from "../../testing/index.js";
 
 describe("compiler: templates", () => {
   let testHost: TestHost;
@@ -290,6 +297,60 @@ describe("compiler: templates", () => {
       code: "invalid-template-default",
       message:
         "Template parameter defaults can only reference previously declared type parameters.",
+    });
+  });
+
+  describe("constraints", () => {
+    let runner: BasicTestRunner;
+
+    beforeEach(async () => {
+      runner = await createTestRunner();
+    });
+
+    it("compile when the constrain is satisfied in the default value", async () => {
+      await runner.compile(`
+        model A<T extends string = "abc"> { a: T }
+      `);
+    });
+
+    it("compile when the constrain is satisfied in template arg", async () => {
+      await runner.compile(`
+        model A<T extends string> { a: T }
+
+        model B {
+          a: A<"def">
+        }
+      `);
+    });
+
+    it("emit diagnostics if template default is not assignable to constraint", async () => {
+      const { source, pos, end } = extractSquiggles(`
+        model A<T extends string = ~~~123~~~> { a: T }
+      `);
+      const diagnostics = await runner.diagnose(source);
+      expectDiagnostics(diagnostics, {
+        code: "unassignable",
+        message: "Type '123' is not assignable to type 'Cadl.string'",
+        pos,
+        end,
+      });
+    });
+
+    it("emit diagnostics if template reference arg is not assignable to constraint", async () => {
+      const { source, pos, end } = extractSquiggles(`
+        model A<T extends string> { a: T }
+
+        model B {
+          a: A<~~~456~~~>
+        }
+      `);
+      const diagnostics = await runner.diagnose(source);
+      expectDiagnostics(diagnostics, {
+        code: "unassignable",
+        message: "Type '456' is not assignable to type 'Cadl.string'",
+        pos,
+        end,
+      });
     });
   });
 });

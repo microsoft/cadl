@@ -323,6 +323,7 @@ export interface UnionTypeVariant extends BaseType, DecoratedType {
 export interface TemplateParameterType extends BaseType {
   kind: "TemplateParameter";
   node: TemplateParameterDeclarationNode;
+  constraint?: Type;
   default?: Type;
 }
 
@@ -897,9 +898,9 @@ export interface IntersectionExpressionNode extends BaseNode {
 }
 
 export interface TypeReferenceNode extends BaseNode {
-  kind: SyntaxKind.TypeReference;
-  target: MemberExpressionNode | IdentifierNode;
-  arguments: Expression[];
+  readonly kind: SyntaxKind.TypeReference;
+  readonly target: MemberExpressionNode | IdentifierNode;
+  readonly arguments: readonly Expression[];
 }
 
 export interface ProjectionReferenceNode extends BaseNode {
@@ -910,6 +911,7 @@ export interface ProjectionReferenceNode extends BaseNode {
 
 export interface TemplateParameterDeclarationNode extends DeclarationNode, BaseNode {
   readonly kind: SyntaxKind.TemplateParameterDeclaration;
+  readonly constraint?: Expression;
   readonly default?: Expression;
 }
 
