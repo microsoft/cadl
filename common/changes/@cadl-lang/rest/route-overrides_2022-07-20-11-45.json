@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@cadl-lang/rest",
+      "comment": "@route decorator can now override @autoRoute generated route",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@cadl-lang/rest"
+}

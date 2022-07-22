@@ -77,7 +77,7 @@ export interface RoutePath {
 }
 
 /**
- * `@route` defines the relative route URI for the target operation
+ * `@route` defines the relative route URI for the target operation or container
  *
  * The first argument should be a URI fragment that may contain one or more path parameter fields.
  * If the namespace or interface that contains the operation is also marked with a `@route` decorator,
@@ -92,6 +92,16 @@ export function $route(context: DecoratorContext, entity: Type, path: string) {
   });
 }
 
+/**
+ * `@routeReset` defines the relative route URI for the target operation or
+ * container
+ *
+ * The first argument should be a URI fragment that may contain one or more path parameter fields.
+ * If the namespace or interface that contains the operation is also marked with a `@route` decorator,
+ * it will be used as a prefix to the route URI of the operation.
+ *
+ * `@routeReset` can only be applied to operations, namespaces, and interfaces.
+ */
 export function $routeReset(context: DecoratorContext, entity: Type, path: string) {
   setRoute(context, entity, {
     path,
@@ -337,9 +347,12 @@ function getPathForOperation(
   options: RouteOptions
 ): { path: string; pathFragment?: string; parameters: HttpOperationParameters } {
   const parameters = diagnostics.pipe(getOperationParameters(program, operation));
-  const pathFragments = [...routeFragments];
   const routePath = getRoutePath(program, operation);
-  if (isAutoRoute(program, operation)) {
+  const pathFragments = routePath?.isReset ? [] : [...routeFragments];
+
+  // First check if we should automatically compute the route.  This should only
+  // happen if there isn't an explicit @route already applied to the operation.
+  if (!routePath && isAutoRoute(program, operation)) {
     // The operation exists within an @autoRoute scope, generate the path.  This
     // mutates the pathFragments and parameters lists that are passed in!
     generatePathFromParameters(program, operation, pathFragments, parameters, options);
@@ -430,7 +443,11 @@ function buildRoutes(
 ): OperationDetails[] {
   // Get the route info for this container, if any
   const baseRoute = getRoutePath(program, container);
-  const parentFragments = [...routeFragments, ...(baseRoute ? [baseRoute.path] : [])];
+  const parentFragments = [
+    // Don't include previous route fragments if the container resets the route
+    ...(baseRoute?.isReset ? [] : routeFragments),
+    ...(baseRoute ? [baseRoute.path] : []),
+  ];
 
   // TODO: Allow overriding the existing resource operation of the same kind
 

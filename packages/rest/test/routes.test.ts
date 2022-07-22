@@ -86,6 +86,123 @@ describe("rest: routes", () => {
     ]);
   });
 
+  it("routeReset enables an operation to override entire route", async () => {
+    const routes = await getRoutesFor(
+      `
+      @route("/things")
+      namespace Things {
+        @get op GetThing(): string;
+
+        @routeReset("/createThing/{thingId}")
+        @put op CreateThing(@path thingId: string): string;
+      }
+      `
+    );
+
+    deepStrictEqual(routes, [
+      { verb: "get", path: "/things", params: [] },
+      { verb: "put", path: "/createThing/{thingId}", params: ["thingId"] },
+    ]);
+  });
+
+  it("routeReset enables a container to reset route prefix for all contained operations", async () => {
+    const routes = await getRoutesFor(
+      `
+      @route("/things")
+      namespace Things {
+        @get op GetThing(): string;
+
+        @route("/{thingId}")
+        @put op CreateThing(@path thingId: string): string;
+
+        @routeReset("/newRoot/{thingId}/subthings")
+        interface Subthing {
+          @get GetSubthing(@path thingId: string): string;
+
+          @route("/{subthingId}")
+          @post CreateSubthing(@path thingId: string, @path subthingId: string): string;
+        }
+      }
+      `
+    );
+
+    deepStrictEqual(routes, [
+      { verb: "get", path: "/things", params: [] },
+      { verb: "put", path: "/things/{thingId}", params: ["thingId"] },
+      { verb: "get", path: "/newRoot/{thingId}/subthings", params: ["thingId"] },
+      {
+        verb: "post",
+        path: "/newRoot/{thingId}/subthings/{subthingId}",
+        params: ["thingId", "subthingId"],
+      },
+    ]);
+  });
+
+  it("routeReset can be used on an autoRoute container", async () => {
+    const routes = await getRoutesFor(
+      `
+      @route("/things")
+      namespace Things {
+        @autoRoute
+        @routeReset("/newRoot")
+        interface Subthing {
+          @segment("subthings")
+          @get GetSubthing(
+            @segment("things")
+            @path thingId: string
+          ): string;
+
+          @post CreateSubthing(
+            @segment("things")
+            @path thingId: string,
+
+            @segment("subthings")
+            @path subthingId: string
+          ): string;
+        }
+      }
+      `
+    );
+
+    deepStrictEqual(routes, [
+      { verb: "get", path: "/newRoot/things/{thingId}/subthings", params: ["thingId"] },
+      {
+        verb: "post",
+        path: "/newRoot/things/{thingId}/subthings/{subthingId}",
+        params: ["thingId", "subthingId"],
+      },
+    ]);
+  });
+
+  it("route and routeReset decorators can override autoRoute on operations", async () => {
+    const routes = await getRoutesFor(
+      `
+      @route("/service")
+      namespace Things {
+        @autoRoute
+        @post op CreateThingBase<TResponse>(
+          @segment("things")
+          @path thingId: string
+        ): TResponse;
+
+        op CreateThing is CreateThingBase<{}>;
+
+        @route("/nonReset/{thingId}")
+        op NotResetCreateThing is CreateThingBase<{}>;
+
+        @routeReset("/reset/{thingId}")
+        op ResetCreateThing is CreateThingBase<{}>;
+      }
+      `
+    );
+
+    deepStrictEqual(routes, [
+      { verb: "post", path: "/service/things/{thingId}", params: ["thingId"] },
+      { verb: "post", path: "/service/nonReset/{thingId}", params: ["thingId"] },
+      { verb: "post", path: "/reset/{thingId}", params: ["thingId"] },
+    ]);
+  });
+
   it("join empty route segments correctly", async () => {
     const routes = await getRoutesFor(
       `

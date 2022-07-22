@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@cadl-lang/rest",
+      "comment": "Add @routeReset decorator to enable operations and containers to override the route prefix of any parent container",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@cadl-lang/rest"
+}
