@@ -28,7 +28,6 @@ export const DiagnosticItem: FunctionComponent<DiagnosticItemProps> = ({ diagnos
       <div className={`diagnostic-item-severity ${diagnostic.severity}`}>{diagnostic.severity}</div>
       <div className="diagnostic-item-code">{diagnostic.code}</div>
       <div className="diagnostic-item-message">{diagnostic.message}</div>
-      <div className="diagnostic-item-location">{diagnostic.severity}</div>
     </div>
   );
 };

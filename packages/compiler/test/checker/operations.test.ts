@@ -78,10 +78,7 @@ describe("compiler: operations", () => {
       }`
     );
 
-    const [result, diagnostics] = await testHost.compileAndDiagnose("./main.cadl");
-    expectDiagnostics(diagnostics, []);
-
-    const { newFoo } = result as { newFoo: OperationType };
+    const { newFoo } = (await testHost.compile("./main.cadl")) as { newFoo: OperationType };
     strictEqual(newFoo.parameters.properties.size, 2);
     const props = Array.from(newFoo.parameters.properties.values());
 
@@ -89,6 +86,41 @@ describe("compiler: operations", () => {
     strictEqual(props[0].type.kind, "Model");
     strictEqual(props[1].name, "payload");
     strictEqual(props[1].type.kind, "Model");
+  });
+
+  it("can reference an operation defined inside an interface", async () => {
+    testHost.addCadlFile(
+      "main.cadl",
+      `
+      interface Foo {
+        bar(): boolean;
+      }
+      
+      @test op newFoo is Foo.bar;
+      `
+    );
+
+    const { newFoo } = (await testHost.compile("./main.cadl")) as { newFoo: OperationType };
+
+    strictEqual(newFoo.returnType.kind, "Model" as const);
+    strictEqual(newFoo.returnType.name, "boolean");
+  });
+
+  it("can reference an operation defined in the same interface", async () => {
+    testHost.addCadlFile(
+      "main.cadl",
+      `
+      interface Foo {
+        bar(): boolean;
+        @test op newFoo is Foo.bar;
+      }
+      `
+    );
+
+    const { newFoo } = (await testHost.compile("./main.cadl")) as { newFoo: OperationType };
+
+    strictEqual(newFoo.returnType.kind, "Model" as const);
+    strictEqual(newFoo.returnType.name, "boolean");
   });
 
   it("applies the decorators of the referenced operation and its transitive references", async () => {
@@ -159,6 +191,43 @@ describe("compiler: operations", () => {
       {
         code: "unknown-identifier",
         message: `Unknown identifier TResource`,
+      },
+    ]);
+  });
+
+  it("emit diagnostic when operation is referencing itself as signature", async () => {
+    testHost.addCadlFile(
+      "main.cadl",
+      `
+      op foo is foo;
+      `
+    );
+    const diagnostics = await testHost.diagnose("main.cadl");
+    expectDiagnostics(diagnostics, [
+      {
+        code: "circular-op-signature",
+        message: "Operation 'foo' recursively references itself.",
+      },
+    ]);
+  });
+
+  it("emit diagnostic when operations reference each other using signature", async () => {
+    testHost.addCadlFile(
+      "main.cadl",
+      `
+      op foo is bar;
+      op bar is foo;
+      `
+    );
+    const diagnostics = await testHost.diagnose("main.cadl");
+    expectDiagnostics(diagnostics, [
+      {
+        code: "circular-op-signature",
+        message: "Operation 'foo' recursively references itself.",
+      },
+      {
+        code: "circular-op-signature",
+        message: "Operation 'bar' recursively references itself.",
       },
     ]);
   });

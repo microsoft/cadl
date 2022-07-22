@@ -1,0 +1,15 @@
+{
+  "changes": [
+    {
+      "packageName": "@cadl-lang/compiler",
+      "comment": "Fix: Operation signature with circular reference causing crash and updated message+code to be relevant to operations.",
+      "type": "patch"
+    },
+    {
+      "packageName": "@cadl-lang/compiler",
+      "comment": "Fix: Couldn't use operation defined inside interfaces as signature.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@cadl-lang/compiler"
+}
