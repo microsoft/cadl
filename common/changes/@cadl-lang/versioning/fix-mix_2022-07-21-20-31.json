@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@cadl-lang/versioning",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@cadl-lang/versioning"
+}

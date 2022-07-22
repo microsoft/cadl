@@ -180,7 +180,7 @@ describe("versioning: reference versioned library", () => {
       expectDiagnosticEmpty(diagnostics);
     });
 
-    it("doesn't emit diagnostic when mixin interface of non versioned lib", async () => {
+    it("doesn't emit diagnostic when extends interface of non versioned lib", async () => {
       const diagnostics = await runner.diagnose(`
         @versioned(Versions)
         namespace MyService {

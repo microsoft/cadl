@@ -81,7 +81,7 @@ describe("compiler: interfaces", () => {
     strictEqual(returnType.name, "int32");
   });
 
-  it("can mix in one other interfaces", async () => {
+  it("can extend one other interfaces", async () => {
     testHost.addCadlFile(
       "main.cadl",
       `
@@ -103,7 +103,7 @@ describe("compiler: interfaces", () => {
     strictEqual((Foo.operations.get("bar")!.returnType as ModelType).name, "int32");
   });
 
-  it("can mix in two other interfaces", async () => {
+  it("can extend two other interfaces", async () => {
     testHost.addCadlFile(
       "main.cadl",
       `
@@ -154,7 +154,7 @@ describe("compiler: interfaces", () => {
     strictEqual(Bar.operations.size, 2);
   });
 
-  it("clones mixed operations", async () => {
+  it("clones extended operations", async () => {
     const blues = new Set<Type>();
     let calls = 0;
     testHost.addJsFile("test.js", {
@@ -181,7 +181,7 @@ describe("compiler: interfaces", () => {
     ok(blues.has(Bar.operations.get("foo")!));
   });
 
-  it("doesn't allow mixins to contain duplicate members", async () => {
+  it("doesn't allow extensions to contain duplicate members", async () => {
     testHost.addCadlFile(
       "main.cadl",
       `
@@ -198,7 +198,7 @@ describe("compiler: interfaces", () => {
     });
   });
 
-  it("allows overriding mixed interface members", async () => {
+  it("allows overriding extended interface members", async () => {
     testHost.addCadlFile(
       "main.cadl",
       `
@@ -215,7 +215,7 @@ describe("compiler: interfaces", () => {
     strictEqual((Foo.operations.get("bar")!.returnType as ModelType).name, "string");
   });
 
-  it("doesn't allow mixing non-interfaces", async () => {
+  it("doesn't allow extending non-interfaces", async () => {
     testHost.addCadlFile(
       "main.cadl",
       `
@@ -227,7 +227,7 @@ describe("compiler: interfaces", () => {
     const diagnostics = await testHost.diagnose("./");
     expectDiagnostics(diagnostics, {
       code: "extends-interface",
-      message: "Interfaces can only mix other interfaces",
+      message: "Interfaces can only extend other interfaces",
     });
   });
 

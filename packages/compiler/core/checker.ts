@@ -2495,22 +2495,22 @@ export function createChecker(program: Program): Checker {
       name: node.id.sv,
     });
 
-    for (const mixinNode of node.extends) {
-      const mixinType = getTypeForNode(mixinNode);
-      if (mixinType.kind !== "Interface") {
+    for (const extendsNode of node.extends) {
+      const extendsType = getTypeForNode(extendsNode);
+      if (extendsType.kind !== "Interface") {
         program.reportDiagnostic(
-          createDiagnostic({ code: "extends-interface", target: mixinNode })
+          createDiagnostic({ code: "extends-interface", target: extendsNode })
         );
         continue;
       }
 
-      for (const newMember of mixinType.operations.values()) {
+      for (const newMember of extendsType.operations.values()) {
         if (interfaceType.operations.has(newMember.name)) {
           program.reportDiagnostic(
             createDiagnostic({
               code: "extends-interface-duplicate",
               format: { name: newMember.name },
-              target: mixinNode,
+              target: extendsNode,
             })
           );
         }
