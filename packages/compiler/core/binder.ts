@@ -104,6 +104,7 @@ export function createBinder(program: Program, options: BinderOptions = {}): Bin
       let name: string;
       let kind: "decorator" | "function";
       let containerSymbol = sourceFile.symbol;
+      const signature = sourceFile.signatures[key];
 
       if (typeof member === "function") {
         // lots of 'any' casts here because control flow narrowing `member` to Function
@@ -160,7 +161,7 @@ export function createBinder(program: Program, options: BinderOptions = {}): Bin
         } else {
           sym = createSymbol(sourceFile, name, SymbolFlags.Function, containerSymbol);
         }
-        sym.value = member as any;
+        sym.value = { signature, fn: member };
         containerSymbol.exports!.set(sym.name, sym);
       }
     }

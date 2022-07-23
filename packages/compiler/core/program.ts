@@ -10,6 +10,7 @@ import { isImportStatement, parse } from "./parser.js";
 import { getDirectoryPath, joinPaths, resolvePath } from "./path-utils.js";
 import { createProjector } from "./projector.js";
 import { SchemaValidator } from "./schema-validator.js";
+import { createTSLoader } from "./ts-loader.js";
 import {
   CadlLibrary,
   CadlScriptNode,
@@ -207,6 +208,8 @@ export async function createProgram(
   let error = false;
 
   const logger = createLogger({ sink: host.logSink, level: options.diagnosticLevel });
+  const tsLoader = createTSLoader(host);
+  let total = 0;
 
   const program: Program = {
     checker: undefined!,
@@ -274,6 +277,8 @@ export async function createProgram(
   const checker = (program.checker = createChecker(program));
   program.checker.checkProgram();
 
+  console.log("Total", total);
+
   if (program.hasError()) {
     return program;
   }
@@ -306,6 +311,7 @@ export async function createProgram(
       );
     }
   }
+
   if (program.hasError()) {
     return program;
   }
@@ -365,6 +371,15 @@ export async function createProgram(
       return undefined;
     }
 
+    const definitionFile = path.replace(".js", ".d.ts");
+    let signatures = {};
+    if ((await host.stat(definitionFile)).isFile()) {
+      const start = new Date().getTime();
+
+      signatures = tsLoader.getExportedFunctionsFromDTS(definitionFile);
+
+      total += new Date().getTime() - start;
+    }
     return {
       kind: SyntaxKind.JsSourceFile,
       id: {
@@ -376,6 +391,7 @@ export async function createProgram(
         flags: NodeFlags.Synthetic,
       },
       esmExports: exports,
+      signatures,
       file,
       namespaceSymbols: [],
       symbol: undefined as any,

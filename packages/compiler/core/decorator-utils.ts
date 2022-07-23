@@ -95,7 +95,9 @@ export function isCadlValueTypeOf<K extends TypeKind>(
   if (kind === undefined) {
     return false;
   }
-
+  if (expectedType === undefined) {
+    return true;
+  }
   return typeof expectedType === "string"
     ? expectedType === "Any" || kind === expectedType
     : expectedType.includes("Any" as any) || expectedType.includes(kind as any);

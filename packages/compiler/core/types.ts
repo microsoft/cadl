@@ -1,5 +1,6 @@
 import type { JSONSchemaType as AjvJSONSchemaType } from "ajv";
 import { Program } from "./program";
+import { DecoratorSignature } from "./ts-loader";
 
 /**
  * Type System types
@@ -14,6 +15,7 @@ export interface DecoratorArgument {
 
 export interface DecoratorApplication {
   decorator: DecoratorFunction;
+  signature?: DecoratorSignature;
   args: DecoratorArgument[];
   node?: DecoratorExpressionNode;
 }
@@ -376,7 +378,10 @@ export interface Sym {
   /**
    * For decorator and function symbols, this is the JS function implementation.
    */
-  value?: (...args: any[]) => any;
+  value?: {
+    fn: (...args: any[]) => any;
+    signature?: DecoratorSignature;
+  };
 }
 
 export interface SymbolLinks {
@@ -1108,8 +1113,15 @@ export interface JsSourceFileNode extends DeclarationNode, BaseNode {
   /* A source file with empty contents to represent the file on disk. */
   readonly file: SourceFile;
 
-  /* The exports object as comes from `import()` */
-  readonly esmExports: any;
+  /**
+   *  The exports object as comes from `import()`
+   */
+  readonly esmExports: Record<string, any>;
+
+  /**
+   * Decorator signatures
+   */
+  readonly signatures: Record<string, DecoratorSignature>;
 
   /* Any namespaces declared by decorators. */
   readonly namespaceSymbols: Sym[];

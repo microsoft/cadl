@@ -2,6 +2,7 @@ import { getDeprecated } from "../lib/decorators.js";
 import { createSymbol, createSymbolTable } from "./binder.js";
 import { compilerAssert, ProjectionError } from "./diagnostics.js";
 import {
+  createDecoratorDefinition,
   DecoratorContext,
   Diagnostic,
   DiagnosticTarget,
@@ -387,9 +388,11 @@ export function createChecker(program: Program): Checker {
     cadlNamespaceBinding!.exports!.set("log", {
       flags: SymbolFlags.Function,
       name: "log",
-      value(p: Program, str: string): Type {
-        program.logger.log({ level: "debug", message: str });
-        return voidType;
+      value: {
+        fn: (p: Program, str: string): Type => {
+          program.logger.log({ level: "debug", message: str });
+          return voidType;
+        },
       },
       declarations: [],
     });
@@ -2382,7 +2385,8 @@ export function createChecker(program: Program): Checker {
       }
 
       decorators.unshift({
-        decorator: sym.value!,
+        decorator: sym.value!.fn,
+        signature: sym.value!.signature,
         node: decNode,
         args: checkDecoratorArguments(decNode),
       });
@@ -2767,7 +2771,17 @@ export function createChecker(program: Program): Checker {
     try {
       const fn = decApp.decorator;
       const context = createDecoratorContext(program, decApp);
-      fn(context, target, ...decApp.args.map((x) => x.value));
+      const args = decApp.args.map((x) => x.value);
+      if (decApp.signature) {
+        const definition = createDecoratorDefinition(decApp.signature as any);
+        if (
+          (target as any).kind !== "TemplateParameter" &&
+          !args.some((x: any) => x.kind === "TemplateParameter")
+        ) {
+          definition.validate(context, target, args);
+        }
+      }
+      fn(context, target, ...args);
     } catch (error: any) {
       // do not fail the language server for exceptions in decorators
       if (program.compilerOptions.designTimeBuild) {
@@ -3564,7 +3578,7 @@ export function createChecker(program: Program): Checker {
     return createType({
       kind: "Function",
       call(...args: Type[]): Type {
-        ref.value!({ program }, ...marshalProjectionArguments(args));
+        ref.value!.fn({ program }, ...marshalProjectionArguments(args));
         return voidType;
       },
     } as const);
@@ -3594,7 +3608,7 @@ export function createChecker(program: Program): Checker {
       const t: FunctionType = createType({
         kind: "Function",
         call(...args: Type[]): Type {
-          const retval = ref.value!(program, ...marshalProjectionArguments(args));
+          const retval = ref.value!.fn(program, ...marshalProjectionArguments(args));
           return marshalProjectionReturn(retval);
         },
       } as const);

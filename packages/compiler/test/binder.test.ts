@@ -499,6 +499,7 @@ function createJsSourceFile(exports: any): JsSourceFileNode {
       flags: NodeFlags.Synthetic,
     },
     esmExports: exports,
+    signatures: {},
     file,
     namespaceSymbols: [],
     symbol: undefined as any,
