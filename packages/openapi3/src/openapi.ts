@@ -804,11 +804,16 @@ function createOAPIEmitter(program: Program, options: ResolvedOpenAPI3EmitterOpt
     if (type === "model" || type === "array") {
       if (nonNullOptions.length === 1) {
         // Get the schema for the model type
-        const schema: any = getSchemaForType(nonNullOptions[0]);
-        if (nullable) {
-          schema["nullable"] = true;
+        let schema: any = getSchemaOrRef(nonNullOptions[0]);
+        if (nullable && schema.$ref) {
+          schema = {
+            type: "object",
+            allOf: [schema],
+            nullable: true,
+          };
+        } else if (nullable) {
+          schema.nullable = true;
         }
-
         return schema;
       } else {
         const ofType = getOneOf(program, union) ? "oneOf" : "anyOf";
